@@ -53,7 +53,8 @@ import {
   Scroll,
   Siren,
   Plus,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react';
 
 interface Player {
@@ -97,6 +98,14 @@ export default function SlokkenVeilingEngine() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [timerSpeed, setTimerSpeed] = useState<number>(15);
   
+  // Custom Dares State
+  const [victoryDaresPool, setVictoryDaresPool] = useState<Dare[]>([...VICTORY_DARES]);
+  const [penaltyDaresPool, setPenaltyDaresPool] = useState<Dare[]>([...PENALTY_DARES]);
+  const [showCustomDareModal, setShowCustomDareModal] = useState(false);
+  const [customDareType, setCustomDareType] = useState<'VICTORY' | 'PENALTY'>('VICTORY');
+  const [customDareTitle, setCustomDareTitle] = useState('');
+  const [customDareDesc, setCustomDareDesc] = useState('');
+
   // Active Game State
   const [phase, setPhase] = useState<GamePhase>('SETUP');
   const [deck, setDeck] = useState<CategoryChallenge[]>([]);
@@ -198,6 +207,34 @@ export default function SlokkenVeilingEngine() {
     sounds.playSuccess();
     confetti({ particleCount: 80, spread: 60 });
     triggerHaptic();
+  };
+
+  const saveCustomDare = () => {
+    if (!customDareTitle.trim() || !customDareDesc.trim()) {
+      alert("Vul zowel een titel als een beschrijving in!");
+      return;
+    }
+
+    const newDare: Dare = {
+      id: `custom-dare-${Date.now()}`,
+      type: customDareType,
+      title: `✨ ${customDareTitle.trim()}`,
+      description: customDareDesc.trim()
+    };
+
+    if (customDareType === 'VICTORY') {
+      setVictoryDaresPool(prev => [newDare, ...prev]);
+    } else {
+      setPenaltyDaresPool(prev => [newDare, ...prev]);
+    }
+
+    setCustomDareTitle('');
+    setCustomDareDesc('');
+    setShowCustomDareModal(false);
+    confetti({ particleCount: 90, spread: 60 });
+    sounds.playSuccess();
+
+    alert(`✨ Eigen ${customDareType === 'VICTORY' ? 'Belonings' : 'Boete'}-opdracht toegevoegd aan het spel!`);
   };
 
   const addActiveRule = () => {
@@ -510,7 +547,7 @@ export default function SlokkenVeilingEngine() {
         setActiveDare(WILDCARD_VICTORY_DARE);
         sounds.playChallenge();
       } else {
-        const randomDare = VICTORY_DARES[Math.floor(Math.random() * VICTORY_DARES.length)];
+        const randomDare = victoryDaresPool[Math.floor(Math.random() * victoryDaresPool.length)];
         setActiveDare(randomDare);
         sounds.playBid();
       }
@@ -519,7 +556,7 @@ export default function SlokkenVeilingEngine() {
         setActiveDare(WILDCARD_PENALTY_DARE);
         sounds.playChallenge();
       } else {
-        const randomDare = PENALTY_DARES[Math.floor(Math.random() * PENALTY_DARES.length)];
+        const randomDare = penaltyDaresPool[Math.floor(Math.random() * penaltyDaresPool.length)];
         setActiveDare(randomDare);
         sounds.playBid();
       }
@@ -568,7 +605,7 @@ export default function SlokkenVeilingEngine() {
         setActiveDare(WILDCARD_VICTORY_DARE);
         sounds.playChallenge();
       } else {
-        const randomVictoryDare = VICTORY_DARES[Math.floor(Math.random() * VICTORY_DARES.length)];
+        const randomVictoryDare = victoryDaresPool[Math.floor(Math.random() * victoryDaresPool.length)];
         setActiveDare(randomVictoryDare);
         sounds.playSuccess();
       }
@@ -589,7 +626,7 @@ export default function SlokkenVeilingEngine() {
         setActiveDare(WILDCARD_PENALTY_DARE);
         sounds.playChallenge();
       } else {
-        const randomPenaltyDare = PENALTY_DARES[Math.floor(Math.random() * PENALTY_DARES.length)];
+        const randomPenaltyDare = penaltyDaresPool[Math.floor(Math.random() * penaltyDaresPool.length)];
         setActiveDare(randomPenaltyDare);
         sounds.playFail();
       }
@@ -898,7 +935,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: CLEAN BIDDING PHASE WITH ALL-IN BLUF, RULES BANNER & SNITCH BUTTON
+  // RENDER: CLEAN BIDDING PHASE WITH ALL-IN BLUF, RULES BANNER, SNITCH & CUSTOM DARE BUTTON
   // ==========================================
   if (phase === 'BIDDING') {
     const highestBidder = players.find(p => p.id === highestBidderId);
@@ -923,6 +960,13 @@ export default function SlokkenVeilingEngine() {
               title="Meld Regelovertreding!"
             >
               <Siren className="w-3.5 h-3.5" /> VERKLIKKER!
+            </button>
+            <button 
+              onClick={() => setShowCustomDareModal(true)}
+              className="p-1.5 bg-purple-950 text-purple-300 rounded-lg border border-purple-800 text-[11px] font-bold"
+              title="Eigen Opdracht Maken"
+            >
+              <Edit3 className="w-4 h-4" />
             </button>
             <button 
               onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
@@ -1089,6 +1133,71 @@ export default function SlokkenVeilingEngine() {
             </div>
           </div>
         </div>
+
+        {/* CUSTOM DARE CREATOR MODAL */}
+        {showCustomDareModal && (
+          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-purple-500/50 p-5 rounded-2xl w-full max-w-xs space-y-3 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-purple-300 text-base flex items-center gap-1.5">
+                  <Edit3 className="w-4 h-4" /> Eigen Opdracht Maken
+                </h3>
+                <button onClick={() => setShowCustomDareModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-400">Wanneer moet deze gebeuren?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => setCustomDareType('VICTORY')}
+                    className={`py-2 rounded-xl text-xs font-black border transition ${
+                      customDareType === 'VICTORY' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                    }`}
+                  >
+                    🏆 Bij Winst
+                  </button>
+                  <button 
+                    onClick={() => setCustomDareType('PENALTY')}
+                    className={`py-2 rounded-xl text-xs font-black border transition ${
+                      customDareType === 'PENALTY' ? 'bg-red-600 text-white border-red-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                    }`}
+                  >
+                    ❌ Bij Verlies
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-400">Titel van de Opdracht:</label>
+                <input 
+                  type="text" 
+                  placeholder="Bijv. 👑 De Rijm-Koning"
+                  value={customDareTitle}
+                  onChange={(e) => setCustomDareTitle(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-400">Wat moet diegene zeggen of doen?</label>
+                <textarea 
+                  placeholder="Bijv. Moet de komende 2 rondes alle zinnen laten rijmen!"
+                  value={customDareDesc}
+                  onChange={(e) => setCustomDareDesc(e.target.value)}
+                  rows={2}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                />
+              </div>
+
+              <button 
+                onClick={saveCustomDare}
+                className="w-full bg-gradient-to-r from-purple-500 to-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs"
+              >
+                TOEVOEGEN AAN SPEL
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* RULE MODAL POPUP */}
         {showRuleModal && (
@@ -1288,7 +1397,7 @@ export default function SlokkenVeilingEngine() {
             Iedereen telt af: 3... 2... 1... Wijs TEGELIJK iemand aan!
           </div>
           <p className="text-xs text-slate-300">
-            De persoon met de meesste vingers op zich gericht drinkt <b>2 STRAFSLOKKEN!</b>
+            De persoon met de meeste vingers op zich gericht drinkt <b>2 STRAFSLOKKEN!</b>
           </p>
         </div>
 
