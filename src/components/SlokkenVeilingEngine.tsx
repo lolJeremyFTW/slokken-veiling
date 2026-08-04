@@ -37,8 +37,8 @@ import {
   Crown,
   Disc,
   Shield,
-  Award,
-  Sparkle
+  PlusCircle,
+  Flag
 } from 'lucide-react';
 
 interface Player {
@@ -51,7 +51,15 @@ interface Player {
   highestBidPlaced: number;
 }
 
-type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'RESOLUTION' | 'STATS';
+type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'HORSE_RACE' | 'CUSTOM_CATEGORY_CREATOR' | 'RESOLUTION' | 'STATS';
+
+interface Horse {
+  id: number;
+  name: string;
+  color: string;
+  bgClass: string;
+  progress: number; // 0 to 100
+}
 
 export default function SlokkenVeilingEngine() {
   // Game Configuration & Players
@@ -63,7 +71,7 @@ export default function SlokkenVeilingEngine() {
   ]);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [timerSpeed, setTimerSpeed] = useState<number>(15); // 10, 15, 20
+  const [timerSpeed, setTimerSpeed] = useState<number>(15);
   
   // Active Game State
   const [phase, setPhase] = useState<GamePhase>('SETUP');
@@ -82,6 +90,21 @@ export default function SlokkenVeilingEngine() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [selectedWheelSegment, setSelectedWheelSegment] = useState<WheelSegment | null>(null);
+
+  // Horse Race Minigame State
+  const [horses, setHorses] = useState<Horse[]>([
+    { id: 1, name: '⚡ Donderflits', color: 'text-amber-400', bgClass: 'bg-amber-500', progress: 0 },
+    { id: 2, name: '🔥 Vuurpijl', color: 'text-orange-400', bgClass: 'bg-orange-500', progress: 0 },
+    { id: 3, name: '💨 Schaduw', color: 'text-purple-400', bgClass: 'bg-purple-500', progress: 0 },
+    { id: 4, name: '🍀 Geluksvogel', color: 'text-emerald-400', bgClass: 'bg-emerald-500', progress: 0 },
+  ]);
+  const [raceRunning, setRaceRunning] = useState(false);
+  const [winningHorse, setWinningHorse] = useState<Horse | null>(null);
+  const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Custom Category Creator State
+  const [customCatTitle, setCustomCatTitle] = useState('');
+  const [customCatDesc, setCustomCatDesc] = useState('');
 
   // Timer State
   const [timeRemaining, setTimeRemaining] = useState<number>(15);
@@ -162,7 +185,6 @@ export default function SlokkenVeilingEngine() {
 
   // Start a new Bidding Round
   const startRound = (card: CategoryChallenge, roundIndex: number) => {
-    // Every 5 rounds, show Wheel of Fortune bonus round!
     if (roundIndex > 0 && roundIndex % 5 === 0 && phase !== 'WHEEL_BONUS') {
       triggerWheelBonus();
       return;
@@ -201,7 +223,6 @@ export default function SlokkenVeilingEngine() {
     setHighestBid(newBid);
     setHighestBidderId(activePlayer.id);
 
-    // Track highest bid placed per player for awards
     setPlayers(prev => prev.map(p => p.id === activePlayer.id ? { ...p, highestBidPlaced: Math.max(p.highestBidPlaced, newBid) } : p));
 
     const remainingActive = players.filter(p => !passedPlayerIds.includes(p.id));
@@ -217,7 +238,6 @@ export default function SlokkenVeilingEngine() {
     sounds.playPass();
     triggerHaptic();
 
-    // Track passes per player
     setPlayers(prev => prev.map(p => p.id === activePlayer.id ? { ...p, totalPasses: p.totalPasses + 1 } : p));
 
     const newPassed = [...passedPlayerIds, activePlayer.id];
@@ -364,7 +384,7 @@ export default function SlokkenVeilingEngine() {
       updateChallengesFailed(bidder.id);
     }
 
-    setIsDoubleBidsActive(false); // Reset double bids modifier
+    setIsDoubleBidsActive(false);
     setPhase('RESOLUTION');
   };
 
@@ -392,7 +412,6 @@ export default function SlokkenVeilingEngine() {
     const selectedIdx = Math.floor(Math.random() * WHEEL_SEGMENTS.length);
     const targetSegment = WHEEL_SEGMENTS[selectedIdx];
 
-    // Calculate rotation angle (3 full spins + offset)
     const segmentAngle = 360 / WHEEL_SEGMENTS.length;
     const extraRounds = 5 * 360;
     const finalRotation = wheelRotation + extraRounds + (selectedIdx * segmentAngle);
@@ -412,21 +431,97 @@ export default function SlokkenVeilingEngine() {
       confetti({ particleCount: 100, spread: 70 });
       sounds.playSuccess();
 
-      // Apply wheel segment effect
       if (targetSegment.id === 'wheel-1') {
-        // Jackpot: Everyone except active player drinks 2 sips
         const others = players.filter(p => p.id !== activePlayer.id).map(p => p.id);
         updateSips(others, 2);
       } else if (targetSegment.id === 'wheel-3') {
-        // Double Bids next round
         setIsDoubleBidsActive(true);
       } else if (targetSegment.id === 'wheel-6') {
-        // Swap sips: Min drinker gives 2 to max drinker
         const sorted = [...players].sort((a, b) => a.sipsDrunk - b.sipsDrunk);
         const maxDrinker = sorted[sorted.length - 1];
         if (maxDrinker) updateSips([maxDrinker.id], 2);
       }
     }, 3000);
+  };
+
+  // Trigger Horse Race Minigame
+  const triggerHorseRace = () => {
+    setPhase('HORSE_RACE');
+    setWinningHorse(null);
+    setRaceRunning(false);
+    setHorses(prev => prev.map(h => ({ ...h, progress: 0 })));
+    sounds.playGavel();
+  };
+
+  // Start Animated Horse Race
+  const startHorseRace = () => {
+    if (raceRunning) return;
+    setRaceRunning(true);
+    setWinningHorse(null);
+    sounds.playBid();
+
+    raceIntervalRef.current = setInterval(() => {
+      setHorses(prev => {
+        let hasWinner = false;
+        let victor: Horse | null = null;
+
+        const updated = prev.map(h => {
+          if (h.progress >= 100) {
+            hasWinner = true;
+            victor = h;
+            return h;
+          }
+          const increment = Math.floor(Math.random() * 12) + 3; // Random speed boost 3-15%
+          const newProgress = Math.min(100, h.progress + increment);
+          if (newProgress >= 100 && !victor) {
+            hasWinner = true;
+            victor = { ...h, progress: 100 };
+          }
+          return { ...h, progress: newProgress };
+        });
+
+        sounds.playWheelTick();
+
+        if (hasWinner && victor) {
+          clearInterval(raceIntervalRef.current as NodeJS.Timeout);
+          setRaceRunning(false);
+          setWinningHorse(victor);
+          sounds.playSuccess();
+          confetti({ particleCount: 150, spread: 80 });
+        }
+
+        return updated;
+      });
+    }, 250);
+  };
+
+  // Save Custom Category Card
+  const saveCustomCategory = () => {
+    if (!customCatTitle.trim() || !customCatDesc.trim()) {
+      alert("Vul zowel een titel als een beschrijving in!");
+      return;
+    }
+
+    const newCatCard: CategoryChallenge = {
+      id: `custom-${Date.now()}`,
+      title: `✨ ${customCatTitle.trim()}`,
+      categoryName: customCatTitle.trim().toLowerCase(),
+      description: customCatDesc.trim(),
+      defaultTimeSeconds: timerSpeed
+    };
+
+    // Insert custom category right next in deck!
+    const newDeck = [...deck];
+    newDeck.splice(currentCardIndex + 1, 0, newCatCard);
+    setDeck(newDeck);
+
+    setCustomCatTitle('');
+    setCustomCatDesc('');
+    confetti({ particleCount: 90, spread: 60 });
+    sounds.playSuccess();
+
+    alert("✨ Eigen categorie toegevoegd! Hij verschijnt nu direct als volgende kaart!");
+    setPhase('BIDDING');
   };
 
   const updateSips = (playerIds: string[], amount: number) => {
@@ -454,7 +549,6 @@ export default function SlokkenVeilingEngine() {
     }
   };
 
-  // Calculate Awards for Endscreen
   const getAwards = () => {
     const sortedBySips = [...players].sort((a, b) => b.sipsDrunk - a.sipsDrunk);
     const sortedByBids = [...players].sort((a, b) => b.bidsWon - a.bidsWon);
@@ -486,7 +580,7 @@ export default function SlokkenVeilingEngine() {
           <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
             DE SLOKKEN VEILING
           </h1>
-          <p className="text-slate-400 text-xs mt-1">Bied hoeveel jij kunt noemen, pak de winst & deel opdrachten uit!</p>
+          <p className="text-slate-400 text-xs mt-1">Bied hoeveel jij kunt noemen, pak de winst & speel minigames!</p>
         </div>
 
         <div className="my-auto space-y-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-xl shadow-2xl z-10">
@@ -534,7 +628,6 @@ export default function SlokkenVeilingEngine() {
             ))}
           </div>
 
-          {/* Speed Mode Selector (Feature 4) */}
           <div className="border-t border-slate-800 pt-3 space-y-2">
             <label className="text-xs font-bold text-slate-400 flex items-center justify-between">
               <span>⏱️ Timer Snelheid:</span>
@@ -596,11 +689,25 @@ export default function SlokkenVeilingEngine() {
           </span>
           <div className="flex items-center gap-2">
             <button 
+              onClick={triggerHorseRace} 
+              className="p-2 bg-amber-950 text-amber-400 rounded-lg border border-amber-800"
+              title="Paardenrace Minigame"
+            >
+              🐎
+            </button>
+            <button 
               onClick={triggerWheelBonus} 
-              className="p-2 bg-purple-950 text-purple-400 rounded-lg border border-purple-800 animate-pulse"
+              className="p-2 bg-purple-950 text-purple-400 rounded-lg border border-purple-800"
               title="Rad van Slokken"
             >
               <Disc className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')} 
+              className="p-2 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800"
+              title="Eigen Categorie Maken"
+            >
+              <PlusCircle className="w-4 h-4" />
             </button>
             <button 
               onClick={() => setPhase('STATS')} 
@@ -608,12 +715,6 @@ export default function SlokkenVeilingEngine() {
               title="Scorebord"
             >
               <Trophy className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={toggleSound}
-              className="p-2 bg-slate-900 text-slate-300 rounded-lg border border-slate-800"
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
             </button>
           </div>
         </div>
@@ -824,7 +925,145 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: WHEEL OF FORTUNE BONUS PHASE (Feature 1)
+  // RENDER: HORSE RACE VISUAL MINIGAME
+  // ==========================================
+  if (phase === 'HORSE_RACE') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-400 text-xs font-bold mb-1">
+            🐎 VISUELE MINIGAME
+          </div>
+          <h2 className="text-3xl font-black text-amber-300">DE KAMPVUUR PAARDENRACE</h2>
+          <p className="text-slate-300 text-xs mt-1">Zet slokken in op een paard & start de race!</p>
+        </div>
+
+        {/* Visual Race Track */}
+        <div className="my-auto z-10 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-2xl">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-800 pb-2">
+            <span>START</span>
+            <span>RACE BAAN</span>
+            <span className="text-amber-400 flex items-center gap-1"><Flag className="w-4 h-4" /> FINISH</span>
+          </div>
+
+          <div className="space-y-4">
+            {horses.map(horse => (
+              <div key={horse.id} className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className={horse.color}>{horse.name}</span>
+                  <span className="text-slate-400">{horse.progress}%</span>
+                </div>
+                <div className="w-full bg-slate-950 h-5 rounded-full overflow-hidden border border-slate-800 relative">
+                  <div 
+                    className={`h-full ${horse.bgClass} transition-all duration-300 rounded-full flex items-center justify-end pr-1 text-xs`}
+                    style={{ width: `${Math.max(8, horse.progress)}%` }}
+                  >
+                    🐎
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {winningHorse && (
+            <div className="mt-4 bg-amber-500/20 border border-amber-500 p-3 rounded-xl text-center animate-bounce">
+              <div className="text-xs font-black uppercase text-amber-400">🏆 GEWONNEN DOOR</div>
+              <div className="text-xl font-black text-white">{winningHorse.name}!</div>
+              <div className="text-xs text-slate-300 mt-1">Iedereen die géén gok had op dit paard neemt 2 slokken!</div>
+            </div>
+          )}
+        </div>
+
+        {/* Action Controls */}
+        <div className="pb-6 z-10 space-y-2">
+          {!winningHorse ? (
+            <button 
+              onClick={startHorseRace}
+              disabled={raceRunning}
+              className={`w-full font-black text-lg py-4 rounded-2xl shadow-xl transition ${
+                raceRunning 
+                  ? 'bg-slate-800 text-slate-500' 
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:from-amber-600 hover:to-orange-600 active:scale-95'
+              }`}
+            >
+              {raceRunning ? 'RACE IS BEZIG...' : '🏁 START DE RACE!'}
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                setPhase('BIDDING');
+                sounds.playBid();
+              }}
+              className="w-full bg-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl active:scale-95"
+            >
+              SERIEUS SPEL HERVATTEN
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: CUSTOM CATEGORY CREATOR (Feature)
+  // ==========================================
+  if (phase === 'CUSTOM_CATEGORY_CREATOR') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 rounded-full text-emerald-400 text-xs font-bold mb-1">
+            <PlusCircle className="w-4 h-4" />
+            INSIDE-JOKE CREATOR
+          </div>
+          <h2 className="text-3xl font-black text-white">EIGEN CATEGORIE MAKEN</h2>
+          <p className="text-slate-400 text-xs mt-1">Voeg een maffe inside-joke of categorie toe aan de stapel!</p>
+        </div>
+
+        <div className="my-auto z-10 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-300">Titel van de categorie:</label>
+            <input 
+              type="text" 
+              placeholder="Bijv. 🍺 Smoesjes van Jeremy"
+              value={customCatTitle}
+              onChange={(e) => setCustomCatTitle(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-300">Vraag & Uitleg:</label>
+            <textarea 
+              placeholder="Bijv. Hoeveel bekende uitspraken van Jeremy kun jij noemen in 15 seconden?"
+              value={customCatDesc}
+              onChange={(e) => setCustomCatDesc(e.target.value)}
+              rows={3}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div className="pb-6 z-10 space-y-2">
+          <button 
+            onClick={saveCustomCategory}
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-slate-950 font-black text-lg py-4 rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
+          >
+            <Sparkle className="w-5 h-5 fill-current" />
+            CATEGORIE TOEVOEGEN AAN SPEL
+          </button>
+          <button 
+            onClick={() => setPhase('BIDDING')}
+            className="w-full bg-slate-900 text-slate-400 font-bold text-xs py-2.5 rounded-xl"
+          >
+            Annuleren
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: WHEEL OF FORTUNE BONUS PHASE
   // ==========================================
   if (phase === 'WHEEL_BONUS') {
     return (
@@ -838,14 +1077,12 @@ export default function SlokkenVeilingEngine() {
           <p className="text-slate-300 text-xs mt-1">Draai voor willekeurige groeps-events & cadeaus!</p>
         </div>
 
-        {/* Wheel Display */}
         <div className="my-auto z-10 text-center relative flex flex-col items-center justify-center">
           <div className="w-64 h-64 relative flex items-center justify-center rounded-full border-4 border-amber-400/80 shadow-2xl bg-slate-900 overflow-hidden">
             <div 
               className="w-full h-full rounded-full transition-transform duration-[3000ms] ease-out flex items-center justify-center"
               style={{ transform: `rotate(${wheelRotation}deg)` }}
             >
-              {/* Wheel segments rendering */}
               {WHEEL_SEGMENTS.map((seg, idx) => (
                 <div 
                   key={seg.id}
@@ -859,13 +1096,11 @@ export default function SlokkenVeilingEngine() {
               ))}
             </div>
 
-            {/* Pointer Needle */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
               <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-amber-400 drop-shadow-md" />
             </div>
           </div>
 
-          {/* Spin Button */}
           <button 
             onClick={spinWheel}
             disabled={isSpinning}
@@ -879,7 +1114,6 @@ export default function SlokkenVeilingEngine() {
           </button>
         </div>
 
-        {/* Selected Wheel Segment Result */}
         {selectedWheelSegment ? (
           <div className="mb-6 z-10 bg-slate-900 border border-amber-500/50 p-4 rounded-2xl text-center space-y-2 shadow-2xl animate-fade-in">
             <div className="text-2xl font-black text-amber-300">
@@ -924,6 +1158,7 @@ export default function SlokkenVeilingEngine() {
           </p>
         </div>
 
+        {/* Dynamic Dare / Wildcard Card */}
         {activeDare && (
           <div className={`my-2 z-10 border rounded-2xl p-4 shadow-2xl relative overflow-hidden text-center backdrop-blur-md transition-all ${
             activeDare.isWildcard 
@@ -957,6 +1192,21 @@ export default function SlokkenVeilingEngine() {
             <p className={`text-xs mt-1 leading-relaxed font-medium ${activeDare.isWildcard ? 'text-amber-100 font-bold' : 'text-amber-200'}`}>
               {activeDare.description}
             </p>
+
+            <div className="mt-3 flex justify-center gap-2">
+              <button 
+                onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
+                className="bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
+              >
+                <PlusCircle className="w-3 h-3" /> Maak Eigen Categorie
+              </button>
+              <button 
+                onClick={triggerHorseRace}
+                className="bg-amber-600/30 border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
+              >
+                🐎 Paardenrace Minigame
+              </button>
+            </div>
           </div>
         )}
 
@@ -1001,7 +1251,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: STATS & DYNAMIC AWARDS (Feature 2)
+  // RENDER: STATS & DYNAMIC AWARDS
   // ==========================================
   const awards = getAwards();
 
@@ -1015,7 +1265,6 @@ export default function SlokkenVeilingEngine() {
         <h2 className="text-3xl font-black text-white">Eindstand Kampvuur</h2>
       </div>
 
-      {/* Dynamic Awards Badges (Feature 2) */}
       <div className="my-2 z-10 grid grid-cols-2 gap-2">
         <div className="bg-slate-900 border border-amber-500/40 p-3 rounded-xl text-center">
           <Crown className="w-5 h-5 text-amber-400 mx-auto mb-1" />
