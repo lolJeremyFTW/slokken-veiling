@@ -16,6 +16,12 @@ export interface Dare {
   isQuizmaster?: boolean;
 }
 
+export interface DoubleOrNothingChallenge {
+  id: string;
+  title: string;
+  task: string;
+}
+
 export interface NeverHaveIEverCard {
   id: string;
   statement: string;
@@ -25,6 +31,22 @@ export interface GroupVoteCard {
   id: string;
   question: string;
 }
+
+// 15 Concrete Double or Nothing Challenges generated automatically!
+export const DOUBLE_OR_NOTHING_CHALLENGES: DoubleOrNothingChallenge[] = [
+  { id: "don-1", title: "⚡ Snelheidstest", task: "Noem nog 3 EXTRA items in de categorie binnen 5 seconden!" },
+  { id: "don-2", title: "🎪 Balans Proef", task: "Balanceer je glas of een flesje 10 seconden op je hoofd zonder te vallen!" },
+  { id: "don-3", title: "🎭 De Hysterische Lach", task: "Lach 5 seconden lang overdreven hard en gemeen als een slechterik uit een film!" },
+  { id: "don-4", title: "💪 Kampvuur Push-ups", task: "Doe 5 snelle push-ups of squats bij het kampvuur!" },
+  { id: "don-5", title: "🎙️ De Mop Verteller", task: "Klinkt er een droge mop of grap uit je mond binnen 10 seconden?" },
+  { id: "don-6", title: "👁️ Staren Zonder Knipperen", task: "Staar 10 seconden strak naar de uitdager zonder te knipperen!" },
+  { id: "don-7", title: "🎶 Zang-Solo", task: "Zing de eerste 2 regels van een bekend Nederlands feestnummer!" },
+  { id: "don-8", title: "🤫 Tongstrelend", task: "Raak met je tong het puntje van je neus aan (of probeer het 5 sec fel)!" },
+  { id: "don-9", title: "🕺 Maffia Dance Move", task: "Doe 10 seconden een bekende dansmove (bijv. de Moonwalk of Floss)!" },
+  { id: "don-10", title: "🔥 Kampvuur Quiz", task: "Noem binnen 5 seconden de voornaam van ieders moeder om het vuur!" },
+  { id: "don-11", title: "📱 Snelste Apper", task: "Open je telefoon en noem het 1e woord van je laatst ontvangen appje!" },
+  { id: "don-12", title: "🍻 Het Vlugge Glas", task: "Neem een denkbeeldige slok en doe een perfecte ober-buiging!" }
+];
 
 // 20 Group Vote Questions
 export const GROUP_VOTE_QUESTIONS: GroupVoteCard[] = [
@@ -80,7 +102,7 @@ export const WILDCARD_PENALTY_DARE: Dare = {
   isWildcard: true
 };
 
-// 15+ Victory Dares (Behind the win)
+// 15+ Victory Dares
 export const VICTORY_DARES: Dare[] = [
   {
     id: "vic-qm",
@@ -175,7 +197,7 @@ export const VICTORY_DARES: Dare[] = [
   }
 ];
 
-// 15+ Penalty Dares (Behind the loss)
+// 15+ Penalty Dares
 export const PENALTY_DARES: Dare[] = [
   {
     id: "pen-1",
@@ -310,14 +332,12 @@ export const WHEEL_SEGMENTS = [
 
 // FULL 50 CATEGORIES DECK!
 export const CATEGORIES: CategoryChallenge[] = [
-  // Special Event Cards
   { id: "cat-event-1", title: "🐎 VERRASSINGS-EVENT: DE KAMPVUUR PAARDENRACE", categoryName: "paardenrace", description: "Verrassings-minigame! Zet slokken in op 1 van de 4 paarden en kijk wie er wint op het scherm!", defaultTimeSeconds: 15, isSpecialEvent: "HORSE_RACE" },
   { id: "cat-event-2", title: "🍻 VERRASSINGS-EVENT: KAMPVUUR BIECHT", categoryName: "ik heb nog nooit", description: "Verrassings-ronde! 5 rondes 'Ik heb nog nooit...'. Wie schuldig is drinkt 1 slok!", defaultTimeSeconds: 15, isSpecialEvent: "NEVER_HAVE_I_EVER" },
   { id: "cat-event-3", title: "🎡 VERRASSINGS-EVENT: RAD VAN SLOKKEN", categoryName: "rad van slokken", description: "Verrassings-ronde! Draai het Rad van Slokken voor een willekeurig groeps-event!", defaultTimeSeconds: 15, isSpecialEvent: "WHEEL_BONUS" },
   { id: "cat-event-4", title: "🎭 VERRASSINGS-EVENT: STEM OP DE SJAAK", categoryName: "groeps-stemming", description: "Verrassings-ronde! De groep krijgt een vraag en telt af 3..2..1.. Wijs tegelijk iemand aan! Meeste stemmen = 2 slokken!", defaultTimeSeconds: 15, isSpecialEvent: "GROUP_VOTE" },
   { id: "cat-event-5", title: "💣 VERRASSINGS-EVENT: DE TIKKENDE SLOK-BOM", categoryName: "slok bom", description: "Verrassings-minigame! Geef de telefoon rond het vuur en noem om de beurt 1 item. Waar de bom ontploft drinkt 3 slokken!", defaultTimeSeconds: 15, isSpecialEvent: "SLOK_BOM" },
   
-  // 45 Category Cards (Total 50 Cards!)
   { id: "cat-qm", title: "👑 De Quizmaster Vragen", categoryName: "quizvragen", description: "Hoeveel algemene kennis- of kampvuurvragen kun jij goed beantwoorden binnen 30 seconden?", defaultTimeSeconds: 30 },
   { id: "cat-1", title: "🚬 Sigaretten & Tabak", categoryName: "sigarettenmerken", description: "Hoeveel verschillende sigaretten- of tabaksmerken kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-2", title: "🍺 Biermerken", categoryName: "biermerken", description: "Hoeveel verschillende biermerken (pils, speciaalbier, pilsners) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
@@ -327,7 +347,7 @@ export const CATEGORIES: CategoryChallenge[] = [
   { id: "cat-6", title: "🛒 Supermarkten", categoryName: "supermarkten", description: "Hoeveel supermarktketens (Nederlands of buitenlands) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-7", title: "🤬 Scheldwoorden & Straattaal", categoryName: "scheldwoorden", description: "Hoeveel scheldwoorden en straattaalwoorden kun jij opnoemen in 10 seconden?", defaultTimeSeconds: 10 },
   { id: "cat-8", title: "⚽ Voetbalclubs", categoryName: "voetbalclubs", description: "Hoeveel professionele voetbalclubs (binnen- of buitenland) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-9", title: "🍹 Sterke Drank & Cocktails", categoryName: "alcohol / cocktails", description: "Hoeveel soorten sterke drank of bekende cocktails kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-9", title: "🍹 Sterke Drank & Cocktails", categoryName: "alcohol / cocktails", description: "Hoeveel soorten sterke drank en bekende cocktails kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-10", title: "👟 Kleding- & Schoenenmerken", categoryName: "kledingmerken", description: "Hoeveel kleding- of schoenenmerken kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-11", title: "🎬 Netflix Series & Films", categoryName: "films / series", description: "Hoeveel films of Netflix-series kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-12", title: "🎤 Zangers, Rappers & Bandjes", categoryName: "artiesten / rappers", description: "Hoeveel bekende zangers, zangeressen of rappers kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
@@ -349,21 +369,19 @@ export const CATEGORIES: CategoryChallenge[] = [
   { id: "cat-28", title: "🎢 Pretparken & Dierentuinen", categoryName: "pretparken / dierentuinen", description: "Hoeveel pretparken of dierentuinen kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-29", title: "📺 Bekende TV Programma's", categoryName: "TV programma's", description: "Hoeveel Nederlandse TV programma's of reality shows kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-30", title: "⚓ Scheeps- / Bootsoorten", categoryName: "bootsoorten", description: "Hoeveel soorten vaartuigen of boten kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
-  
-  // NEW CATEGORIES 31-45 (Bringing total to 50 Cards!)
-  { id: "cat-31", title: "🍦 IJssoorten & IJsmerken", categoryName: "ijsjes / ijsmerken", description: "Hoeveel ijssoorten of ijsmerken (bijv. Magnum, Solero, Cornetto, Ben & Jerry's) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-32", title: "🎸 Bekende Rock & Pop Bands", categoryName: "muziek bands", description: "Hoeveel bekende bands (bijv. Queen, Coldplay, AC/DC, Direct) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-31", title: "🍦 IJssoorten & IJsmerken", categoryName: "ijsjes / ijsmerken", description: "Hoeveel ijssoorten of ijsmerken kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-32", title: "🎸 Bekende Rock & Pop Bands", categoryName: "muziek bands", description: "Hoeveel bekende bands kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-33", title: "🛸 Superhero / Marvel Characters", categoryName: "superhelden", description: "Hoeveel superhelden of Marvel/DC personages kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-34", title: "🥊 Bekende Sporters", categoryName: "sporters", description: "Hoeveel bekende Nederlandse of internationale topsporters kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-35", title: "☕ Koffie- & Theesoorten", categoryName: "koffie / thee", description: "Hoeveel verschillende soorten koffie of thee kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-36", title: "📱 Social Media Platformen", categoryName: "social media", description: "Hoeveel social media netwerken en apps kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-37", title: "🧰 Gereedschap & Bouwspullen", categoryName: "gereedschap", description: "Hoeveel stukken gereedschap of bouwspullen kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-38", title: "✈️ Luchtvaartmaatschappijen", categoryName: "vliegmaatschappijen", description: "Hoeveel luchtvaartmaatschappijen (bijv. KLM, Ryanair, Transavia) kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-39", title: "🍣 Japanse & Aziatische Gerechten", categoryName: "Aziatisch eten", description: "Hoeveel Aziatische gerechten (bijv. Sushi, Ramen, Babi Pangang) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-38", title: "✈️ Luchtvaartmaatschappijen", categoryName: "vliegmaatschappijen", description: "Hoeveel luchtvaartmaatschappijen kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-39", title: "🍣 Japanse & Aziatische Gerechten", categoryName: "Aziatisch eten", description: "Hoeveel Aziatische gerechten kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-40", title: "🏰 Disney Films & Personages", categoryName: "Disney personages", description: "Hoeveel bekende Disney personages of animatiefilms kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-41", title: "🍫 Chocolademerken & Repen", categoryName: "chocolademerk", description: "Hoeveel chocolademerken of repen (bijv. Snickers, Milka, Tony's) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-41", title: "🍫 Chocolademerken & Repen", categoryName: "chocolademerk", description: "Hoeveel chocolademerken of repen kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-42", title: "🎾 Sporten & Atletiek", categoryName: "sporttakken", description: "Hoeveel verschillende beoefende sporten kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-43", title: "📺 Reality TV Shows", categoryName: "reality shows", description: "Hoeveel reality TV programma's (bijv. Temptation Island, Expeditie Robinson, Big Brother) kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
+  { id: "cat-43", title: "📺 Reality TV Shows", categoryName: "reality shows", description: "Hoeveel reality TV programma's kun jij noemen in 15 seconden?", defaultTimeSeconds: 15 },
   { id: "cat-44", title: "🍇 Fruitsoorten & Bessen", categoryName: "fruit & bessen", description: "Hoeveel verschillende fruitsoorten of bessen kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 },
-  { id: "cat-45", title: "🍺 Speciaalbieren & Blondjes", categoryName: "speciaalbieren", description: "Hoeveel specifieke namen van speciaalbieren (bijv. Duvel, La Chouffe, Hertog Jan Grand Prestige) kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 }
+  { id: "cat-45", title: "🍺 Speciaalbieren & Blondjes", categoryName: "speciaalbieren", description: "Hoeveel specifieke namen van speciaalbieren kun jij opnoemen in 15 seconden?", defaultTimeSeconds: 15 }
 ];

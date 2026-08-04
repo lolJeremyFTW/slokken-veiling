@@ -11,11 +11,13 @@ import {
   WHEEL_SEGMENTS,
   NEVER_HAVE_I_EVER_QUESTIONS,
   GROUP_VOTE_QUESTIONS,
+  DOUBLE_OR_NOTHING_CHALLENGES,
   CategoryChallenge, 
   Dare,
   WheelSegment,
   NeverHaveIEverCard,
-  GroupVoteCard
+  GroupVoteCard,
+  DoubleOrNothingChallenge
 } from '../data/challenges';
 import { sounds } from '../utils/soundEffects';
 import { 
@@ -71,12 +73,12 @@ interface Horse {
 }
 
 const WHEEL_COLORS = [
-  '#f59e0b', // Amber
-  '#ec4899', // Pink
-  '#8b5cf6', // Purple
-  '#ef4444', // Red
-  '#10b981', // Emerald
-  '#3b82f6', // Blue
+  '#f59e0b',
+  '#ec4899',
+  '#8b5cf6',
+  '#ef4444',
+  '#10b981',
+  '#3b82f6',
 ];
 
 export default function SlokkenVeilingEngine() {
@@ -117,7 +119,8 @@ export default function SlokkenVeilingEngine() {
   const [nhieIndex, setNhieIndex] = useState(0);
   const [nhieQuestions, setNhieQuestions] = useState<NeverHaveIEverCard[]>([]);
 
-  // Extra Bonus Challenge / Double Reward State
+  // Double or Nothing State
+  const [activeDonTask, setActiveDonTask] = useState<DoubleOrNothingChallenge | null>(null);
   const [isRedeemed, setIsRedeemed] = useState(false);
   const [isDoubleRewarded, setIsDoubleRewarded] = useState(false);
 
@@ -240,6 +243,7 @@ export default function SlokkenVeilingEngine() {
     setPassedPlayerIds([]);
     setChallengerId(null);
     setActiveDare(null);
+    setActiveDonTask(null);
     setIsRedeemed(false);
     setIsDoubleRewarded(false);
     
@@ -383,6 +387,38 @@ export default function SlokkenVeilingEngine() {
     sounds.playBid();
   };
 
+  // Draw Double or Nothing Challenge
+  const startDoubleOrNothing = () => {
+    const randomTask = DOUBLE_OR_NOTHING_CHALLENGES[Math.floor(Math.random() * DOUBLE_OR_NOTHING_CHALLENGES.length)];
+    setActiveDonTask(randomTask);
+    sounds.playChallenge();
+  };
+
+  const handleDonOutcome = (success: boolean) => {
+    const bidder = players.find(p => p.id === highestBidderId);
+    if (!bidder) return;
+
+    setIsDoubleRewarded(true);
+    if (success) {
+      sounds.playSuccess();
+      confetti({ particleCount: 140, spread: 80 });
+      setResolutionData(prev => prev ? {
+        ...prev,
+        headline: `💎 DUBBELE BELONING GEPAKT BY ${bidder.name.toUpperCase()}!`,
+        subtext: `Challenge voltooid! Je mag direct 4 BONUS SLOKKEN naar keuze uitdelen rond het vuur!`,
+      } : null);
+    } else {
+      sounds.playFail();
+      updateSips([bidder.id], 2);
+      setResolutionData(prev => prev ? {
+        ...prev,
+        headline: `❌ DUBBEL OF NIETS GEFAALD!`,
+        subtext: `Challenge gefaald! ${bidder.name} neemt 2 extra strafslokken!`,
+        drinkers: [{ name: bidder.name, sips: 2, reason: "Gefaald in Dubbel of Niets challenge" }]
+      } : null);
+    }
+  };
+
   // Group Vote Start
   const startGroupVote = () => {
     const randomQuestion = GROUP_VOTE_QUESTIONS[Math.floor(Math.random() * GROUP_VOTE_QUESTIONS.length)];
@@ -462,22 +498,6 @@ export default function SlokkenVeilingEngine() {
       headline: `🔥 ${bidder.name} HEEFT ZICHZELF HERSTELD!`,
       subtext: `Opdracht met succes voltooid! De slokken-straf is geannuleerd!`,
       drinkers: []
-    } : null);
-  };
-
-  // Double Reward Mechanic (Winner Bonus Challenge)
-  const handleDoubleReward = () => {
-    const bidder = players.find(p => p.id === highestBidderId);
-    if (!bidder || isDoubleRewarded) return;
-
-    sounds.playSuccess();
-    confetti({ particleCount: 140, spread: 80 });
-    setIsDoubleRewarded(true);
-
-    setResolutionData(prev => prev ? {
-      ...prev,
-      headline: `💎 DUBBELE BELONING GEPAKT BY ${bidder.name.toUpperCase()}!`,
-      subtext: `Extra challenge voltooid! Je mag direct 4 BONUS SLOKKEN naar keuze uitdelen rond het vuur!`,
     } : null);
   };
 
@@ -571,7 +591,6 @@ export default function SlokkenVeilingEngine() {
     const selectedIdx = Math.floor(Math.random() * WHEEL_SEGMENTS.length);
     const targetSegment = WHEEL_SEGMENTS[selectedIdx];
 
-    // Align segment to top indicator (pointer is at top: 270 deg or 90 deg depending on SVG)
     const sliceAngle = 360 / WHEEL_SEGMENTS.length;
     const targetAngle = 360 - (selectedIdx * sliceAngle) - (sliceAngle / 2);
     const extraSpins = 5 * 360;
@@ -1007,15 +1026,12 @@ export default function SlokkenVeilingEngine() {
           <p className="text-slate-300 text-xs mt-1">Draai voor willekeurige groeps-events & cadeaus!</p>
         </div>
 
-        {/* Clean SVG Conical Segment Wheel */}
         <div className="my-auto z-10 text-center relative flex flex-col items-center justify-center">
           <div className="relative w-72 h-72 flex items-center justify-center drop-shadow-2xl">
-            {/* Top Pointer Arrow */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
               <div className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-amber-400 drop-shadow-lg" />
             </div>
 
-            {/* Rotating Wheel Circle */}
             <div 
               className="w-full h-full rounded-full transition-transform duration-[3000ms] ease-out shadow-2xl border-4 border-amber-400/80 overflow-hidden"
               style={{ transform: `rotate(${wheelRotation}deg)` }}
@@ -1032,7 +1048,6 @@ export default function SlokkenVeilingEngine() {
                   const x2 = 120 + 120 * Math.cos(endAngle);
                   const y2 = 120 + 120 * Math.sin(endAngle);
 
-                  // Radial text coordinates
                   const textX = 120 + 72 * Math.cos(midAngle);
                   const textY = 120 + 72 * Math.sin(midAngle);
 
@@ -1058,7 +1073,6 @@ export default function SlokkenVeilingEngine() {
                     </g>
                   );
                 })}
-                {/* Center Pin */}
                 <circle cx="120" cy="120" r="22" fill="#020617" stroke="#f59e0b" strokeWidth="4" />
                 <circle cx="120" cy="120" r="10" fill="#f59e0b" />
               </svg>
@@ -1454,7 +1468,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: RESOLUTION PHASE
+  // RENDER: RESOLUTION PHASE WITH DYNAMIC DOUBLE OR NOTHING POPUP
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
     const bidder = players.find(p => p.id === highestBidderId);
@@ -1474,7 +1488,7 @@ export default function SlokkenVeilingEngine() {
           </p>
         </div>
 
-        {/* Dynamic Dare Card */}
+        {/* Dynamic Victory / Penalty Dare Card */}
         {activeDare && (
           <div className={`my-2 z-10 border rounded-2xl p-4 shadow-2xl relative overflow-hidden text-center backdrop-blur-md transition-all ${
             activeDare.isQuizmaster
@@ -1529,26 +1543,51 @@ export default function SlokkenVeilingEngine() {
           </div>
         )}
 
-        {/* DOUBLE REWARD / DUBBEL OF NIETS */}
+        {/* AUTOMATIC DOUBLE OR NOTHING CHALLENGE POPUP FOR WINNERS */}
         {hasWon && !isDoubleRewarded && (
-          <div className="my-2 z-10 bg-gradient-to-r from-emerald-950 to-amber-950 border border-emerald-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
-            <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
-              <Gem className="w-4 h-4 animate-bounce text-emerald-400" />
-              💎 DUBBEL OF NIETS (EXTRA BELONINGS-CHALLENGE)!
-            </div>
-            <p className="text-xs text-slate-200">
-              Voer een extra maffe uitdaging uit en pak direct <b>4 EXTRA BONUS SLOKKEN</b> om uit te delen!
-            </p>
-            <button 
-              onClick={handleDoubleReward}
-              className="w-full bg-gradient-to-r from-emerald-400 to-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 fill-current" /> EXTRA CHALLENGE VOLTOOID! (PAK 4 BONUS SLOKKEN)
-            </button>
+          <div className="my-2 z-10 bg-gradient-to-r from-emerald-950 to-amber-950 border border-emerald-500/50 p-4 rounded-2xl text-center shadow-xl space-y-3">
+            {!activeDonTask ? (
+              <>
+                <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
+                  <Gem className="w-4 h-4 animate-bounce text-emerald-400" />
+                  💎 DUBBEL OF NIETS (BONUS CHALLENGE)!
+                </div>
+                <p className="text-xs text-slate-200">
+                  Durf jij een extra willekeurige challenge aan voor <b>4 EXTRA BONUS SLOKKEN</b>?
+                </p>
+                <button 
+                  onClick={startDoubleOrNothing}
+                  className="w-full bg-gradient-to-r from-emerald-400 to-amber-400 text-slate-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 shadow-lg"
+                >
+                  🎲 TREK DUBBEL OF NIETS CHALLENGE!
+                </button>
+              </>
+            ) : (
+              <div className="space-y-2 animate-fade-in">
+                <span className="text-[10px] font-black uppercase text-amber-400 bg-slate-950 px-2 py-0.5 rounded border border-amber-500/40">
+                  {activeDonTask.title}
+                </span>
+                <div className="text-base font-black text-white">{activeDonTask.task}</div>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button 
+                    onClick={() => handleDonOutcome(true)}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> GELUKT! (+4 SLOKKEN)
+                  </button>
+                  <button 
+                    onClick={() => handleDonOutcome(false)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1"
+                  >
+                    <XCircle className="w-4 h-4" /> GEFAALD (+2 DRINKEN)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* REDEEM YOURSELF MECHANIC BUTTON */}
+        {/* REDEEM YOURSELF MECHANIC BUTTON FOR LOSERS */}
         {hasFailed && !isRedeemed && (
           <div className="my-2 z-10 bg-gradient-to-r from-orange-950 to-amber-950 border border-orange-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-black text-orange-400 uppercase tracking-wider">
