@@ -1,6 +1,6 @@
 export interface QuizQuestion {
   id: string;
-  category: '🍺 BIER & ALCOHOL' | '🏎️ SPORT & F1' | '🎵 MUZIEK & HITS' | '🧠 MAFFE FEITJES' | '🎬 FILMS & TV';
+  category: '🍺 BIER & DRANK' | '🏎️ SPORT & F1' | '🎵 HIPHOP & FEESTHITS' | '📲 MEMES & TIKTOK' | '🎬 REALITY & TV';
   question: string;
   options: string[];
   correctIndex: number;
@@ -8,173 +8,173 @@ export interface QuizQuestion {
 }
 
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
-  // 🍺 BIER & ALCOHOL
+  // 🎵 HIPHOP & FEESTHITS (18-25)
   {
     id: "q-1",
-    category: "🍺 BIER & ALCOHOL",
-    question: "Welk biermerk gebruikt het motto 'Vakmanschap is Meesterschap'?",
-    options: ["Heineken", "Grolsch", "Hertog Jan", "Amstel"],
+    category: "🎵 HIPHOP & FEESTHITS",
+    question: "Welke Nederlandse zangeres scoorde een gigantische hit met het nummer 'Sugardaddy'?",
+    options: ["MEAU", "Roxy Dekker", "Suzan & Freek", "Froukje"],
     correctIndex: 1,
-    explanation: "Grolsch gebruikt sinds 1959 de beroemde leus 'Vakmanschap is Meesterschap'!"
+    explanation: "Roxy Dekker scoorde een megahit met 'Sugardaddy' en 'Satisfyer'!"
   },
   {
     id: "q-2",
-    category: "🍺 BIER & ALCOHOL",
-    question: "Uit welk land komt de bekende cocktail 'Mojito' oorspronkelijk?",
-    options: ["Mexico", "Spanje", "Cuba", "Brazilië"],
+    category: "🎵 HIPHOP & FEESTHITS",
+    question: "Welke Haagse band werd in 1 klap beroemd met nummers als 'Noodgeval' en 'Jaap Resema'?",
+    options: ["Chef'Special", "Direct", "Goldband", "Krang"],
     correctIndex: 2,
-    explanation: "Mojito is uitgevonden in Havana, Cuba!"
+    explanation: "Goldband uit Den Haag veroverde alle festivals met Noodgeval!"
   },
   {
     id: "q-3",
-    category: "🍺 BIER & ALCOHOL",
-    question: "Hoeveel procent alcohol bevat een standaard blikje Klok bier op kamertemperatuur?",
-    options: ["4.8%", "5.0%", "8.5%", "11.6%"],
+    category: "🎵 HIPHOP & FEESTHITS",
+    question: "Met welk nummer vertegenwoordigde Joost Klein Nederland op het Eurovisie Songfestival?",
+    options: ["Frikandel Speciaal", "Europapa", "Wachtmuziek", "Friesenjung"],
     correctIndex: 1,
-    explanation: "Een echte gladiator drinkt Klok van 5.0% op kamertemperatuur!"
+    explanation: "Joost Klein brak het internet af met Europapa!"
   },
   {
     id: "q-4",
-    category: "🍺 BIER & ALCOHOL",
-    question: "Wat is de hoofdingrediënt van de Mexicaanse drank Tequila?",
-    options: ["Suikerriet", "Blauwe Agave", "Cactusvijg", "Maïs"],
-    correctIndex: 1,
-    explanation: "Echte Tequila wordt gemaakt van het sap van de Blauwe Agave plant!"
+    category: "🎵 HIPHOP & FEESTHITS",
+    question: "Welke bekende Haagse feest-groep zingt 'Pads Geweest' en maakt studentenhits?",
+    options: ["Turfy Gang", "Bankzitters", "Pim & Pom", "Kusjesdag"],
+    correctIndex: 0,
+    explanation: "Turfy Gang scoorde enorme hits in de studenten- en feestwereld!"
   },
   {
     id: "q-5",
-    category: "🍺 BIER & ALCOHOL",
-    question: "Welk Belgisch speciaalbier heeft een kabouter met een rode muts op het etiket?",
-    options: ["Duvel", "La Chouffe", "Kasteelbier", "Delirium Tremens"],
-    correctIndex: 1,
-    explanation: "La Chouffe staat bekend om de kabouter Marcel met zijn rode muts!"
+    category: "🎵 HIPHOP & FEESTHITS",
+    question: "Welk nummer van Lil Kleine en Ronnie Flex werd in 2015 de allereerste #1 hiphop-hit in Nederland?",
+    options: ["Krantenwijk", "Drank & Dronken", "Drank & Drugs", "Loterij"],
+    correctIndex: 2,
+    explanation: "Drank & Drugs veranderde de Nederlandse hiphop-industrie in 2015!"
   },
 
-  // 🏎️ SPORT & F1
+  // 🍺 BIER & DRANK (18-25)
   {
     id: "q-6",
-    category: "🏎️ SPORT & F1",
-    question: "In welk jaar werd Max Verstappen voor de allereerste keer wereldkampioen Formule 1?",
-    options: ["2019", "2020", "2021", "2022"],
-    correctIndex: 2,
-    explanation: "Max won zijn eerste F1 wereldtitel in het legendarische seizoen 2021 in Abu Dhabi!"
+    category: "🍺 BIER & DRANK",
+    question: "Wat zit er verplicht in de beruchte 'Jägerbomb' shot?",
+    options: ["Jägermeister + Vodka", "Jägermeister + Red Bull", "Jägermeister + Cola", "Jägermeister + Bier"],
+    correctIndex: 1,
+    explanation: "Een Jägerbomb is een shotglas Jägermeister laten vallen in een glas Red Bull!"
   },
   {
     id: "q-7",
-    category: "🏎️ SPORT & F1",
-    question: "Hoeveel spelers staan er per team tegelijk op het veld bij een klassieke voetbalwedstrijd?",
-    options: ["9", "10", "11", "12"],
-    correctIndex: 2,
-    explanation: "11 spelers inclusief de keeper!"
+    category: "🍺 BIER & DRANK",
+    question: "Welk iconisch shotje met een geel/rood dopje heeft een eendje op het flesje?",
+    options: ["Trojka", "Flügel", "Boswandeling", "Rocketshot"],
+    correctIndex: 1,
+    explanation: "Flügel! Flesje op de neus en tikken op de bar!"
   },
   {
     id: "q-8",
-    category: "🏎️ SPORT & F1",
-    question: "Wat is de maximale score die je in 1 enkele worp met 3 pijltjes kunt gooien bij Darts?",
-    options: ["140", "160", "180", "200"],
-    correctIndex: 2,
-    explanation: "3x Triple 20 = 180!"
+    category: "🍺 BIER & DRANK",
+    question: "Hoeveel procent alcohol bevat een standaard flesje Baco (Bacardi Cola) premix?",
+    options: ["5.0%", "7.0%", "10.0%", "14.0%"],
+    correctIndex: 0,
+    explanation: "Een Baco premix blikje zit rond de 5.0% alcohol!"
   },
   {
     id: "q-9",
-    category: "🏎️ SPORT & F1",
-    question: "Welke club heeft de meeste UEFA Champions League titels ooit gewonnen?",
-    options: ["FC Barcelona", "Bayern München", "Real Madrid", "AC Milan"],
-    correctIndex: 2,
-    explanation: "Real Madrid is de koning van Europa met meer dan 15 Champions League bekers!"
+    category: "🍺 BIER & DRANK",
+    question: "Wat is de naam van het befaamde spaanse feesteiland waar duizenden jongeren zomervakantie vieren?",
+    options: ["Ibiza", "Mallorca", "Chersonissos", "Lloret de Mar"],
+    correctIndex: 1,
+    explanation: "El Arenal op Mallorca en Lloret de Mar zijn de jongeren hotspots!"
   },
-
-  // 🎵 MUZIEK & HITS
   {
     id: "q-10",
-    category: "🎵 MUZIEK & HITS",
-    question: "Wie zong de gigantische feest-hit 'Engelbewaarder'?",
-    options: ["Tino Martin", "Marco Schuitmaker", "Mart Hoogkamer", "Snollebollekes"],
+    category: "🍺 BIER & DRANK",
+    question: "Welk biermerk staat bekend om het flesje met de beugeldop die met een harde 'PLOP' opengaat?",
+    options: ["Heineken", "Grolsch", "Bavaria", "Brand"],
     correctIndex: 1,
-    explanation: "Marco Schuitmaker scoorde een megahit met Engelbewaarder!"
+    explanation: "De iconische Grolsch Beugelfles!"
   },
+
+  // 📲 MEMES & TIKTOK (18-25)
   {
     id: "q-11",
-    category: "🎵 MUZIEK & HITS",
-    question: "Welke artiest staat bekend als The King of Pop?",
-    options: ["Elvis Presley", "Prince", "Michael Jackson", "Freddie Mercury"],
-    correctIndex: 2,
-    explanation: "Michael Jackson is The King of Pop!"
+    category: "📲 MEMES & TIKTOK",
+    question: "Welke bekende Nederlandse YouTuber-groep bestaat uit Milo, Matthy, Raoul, Robbert en Koen?",
+    options: ["StukTV", "Bankzitters", "Ponkers", "Furtjuh"],
+    correctIndex: 1,
+    explanation: "De Bankzitters veroveren YouTube, Spotify en de hitlijsten!"
   },
   {
     id: "q-12",
-    category: "🎵 MUZIEK & HITS",
-    question: "Wat moet je doen als de Snollebollekes zingen 'Naar Links... Naar...'?",
-    options: ["Voren", "Achteren", "Rechts", "Boven"],
-    correctIndex: 2,
-    explanation: "Naar links... NAAR RECHTS!"
+    category: "📲 MEMES & TIKTOK",
+    question: "Wie is het gezicht van de virale quote: 'Een koekje van eigen deeg, met een beetje mayo'?",
+    options: ["Mastermovies", "Rundfunk", "Sluipschutters", "Geer & Goor"],
+    correctIndex: 0,
+    explanation: "Mastermovies classics zoals Arie & Bastiaan!"
   },
   {
     id: "q-13",
-    category: "🎵 MUZIEK & HITS",
-    question: "Welke Nederlandse DJ werd meerdere keren uitgeroepen tot #1 DJ van de wereld op 17-jarige leeftijd?",
-    options: ["Armin van Buuren", "Tiësto", "Martin Garrix", "Hardwell"],
-    correctIndex: 2,
-    explanation: "Martin Garrix brak op 17-jarige leeftijd door met 'Animals'!"
+    category: "📲 MEMES & TIKTOK",
+    question: "Welk beroemd videogame platform gebruikt de slogan 'Victory Royale' als je wint?",
+    options: ["Call of Duty", "Fortnite", "Apex Legends", "PUBG"],
+    correctIndex: 1,
+    explanation: "Fortnite Battle Royale!"
   },
-
-  // 🧠 MAFFE FEITJES
   {
     id: "q-14",
-    category: "🧠 MAFFE FEITJES",
-    question: "Hoeveel harten heeft een inktvis (octopus)?",
-    options: ["1", "2", "3", "4"],
-    correctIndex: 2,
-    explanation: "Een inktvis heeft maar liefst 3 harten!"
+    category: "📲 MEMES & TIKTOK",
+    question: "Welk getal is op internet- en memecultuur beroemd vanwege de datum 20 april (w**d day)?",
+    options: ["69", "420", "666", "1337"],
+    correctIndex: 1,
+    explanation: "420 is de ultieme internet meme!"
   },
+
+  // 🎬 REALITY & TV (18-25)
   {
     id: "q-15",
-    category: "🧠 MAFFE FEITJES",
-    question: "Wat is het enige zoogdier op aarde dat echt kan vliegen?",
-    options: ["Vliegende eekhoorn", "Vleermuis", "Vliegende vis", "Kolibrie"],
+    category: "🎬 REALITY & TV",
+    question: "In welk realityprogramma gaan koppels naar een tropisch eiland om te testen of ze verleiding kunnen weerstaan?",
+    options: ["Ex on the Beach", "Temptation Island", "Love Island", "De Bachelorette"],
     correctIndex: 1,
-    explanation: "Vleermuizen zijn de enige zoogdieren die actief kunnen vliegen!"
+    explanation: "Temptation Island, waar de kampvuur-ceremonies plaatsvinden!"
   },
   {
     id: "q-16",
-    category: "🧠 MAFFE FEITJES",
-    question: "Welke kleur heeft het bloed van een kreeft?",
-    options: ["Rood", "Groen", "Blauw", "Geel"],
-    correctIndex: 2,
-    explanation: "Kreeftenbloed bevat koper (hemocyanine) waardoor het blauw is!"
+    category: "🎬 REALITY & TV",
+    question: "Wat roepen de kandidaten van Ex on the Beach als er een nieuwe ex uit de zee komt lopen?",
+    options: ["DE TERROR TABLET!", "DE RECYCLE BEL!", "DE EX ALARM!", "DE ALARM KNOP!"],
+    correctIndex: 0,
+    explanation: "De Terror Tablet stelt nooit teleur!"
   },
   {
     id: "q-17",
-    category: "🧠 MAFFE FEITJES",
-    question: "Wat is het snelste landdier ter wereld?",
-    options: ["Jachtluipaard (Cheetah)", "Leeuw", "Antelope", "Hazewindhond"],
-    correctIndex: 0,
-    explanation: "De cheetah renat tot wel 120 km/u!"
+    category: "🎬 REALITY & TV",
+    question: "In de cult-serie New Kids, wat is de favoriete snack van Richard, Rikkert, Robbie, Barrie en Gerrie?",
+    options: ["Kroket", "Frikandel Speciaal", "Broodje Bakpao", "Kapsalon"],
+    correctIndex: 2,
+    explanation: "Broodje Bakpao, kut!"
   },
 
-  // 🎬 FILMS & TV
+  // 🏎️ SPORT & F1 (18-25)
   {
     id: "q-18",
-    category: "🎬 FILMS & TV",
-    question: "Hoe heet de denkbeeldige school voor magie waar Harry Potter naartoe gaat?",
-    options: ["Zwerkbal", "Zweinstein", "Narnia", "Midden-Aarde"],
-    correctIndex: 1,
-    explanation: "Zweinstein (Hogwarts)!"
+    category: "🏎️ SPORT & F1",
+    question: "Voor welk Formule 1 team rijdt Max Verstappen al jarenlang zijn races?",
+    options: ["Ferrari", "Mercedes", "Red Bull Racing", "McLaren"],
+    correctIndex: 2,
+    explanation: "Red Bull Racing!"
   },
   {
     id: "q-19",
-    category: "🎬 FILMS & TV",
-    question: "In de serie 'New Kids', in welk Brabants dorp spelen de avonturen zich af?",
-    options: ["Eindhoven", "Maaskantje", "Tilburg", "Den Bosch"],
+    category: "🏎️ SPORT & F1",
+    question: "Welke Nederlandse voetballer maakte de legendarische 'Vliegende Hollander' kopbal op het WK 2014 tegen Spanje?",
+    options: ["Arjen Robben", "Robin van Persie", "Wesley Sneijder", "Memphis Depay"],
     correctIndex: 1,
-    explanation: "Maaskantje, kut!"
+    explanation: "Robin van Persie zweefde door de lucht tegen Spanje!"
   },
   {
     id: "q-20",
-    category: "🎬 FILMS & TV",
-    question: "Wat is de naam van de blauwe wezens die in een rood paddenstoelenhuis wonen?",
-    options: ["Minions", "Smurfen", "Teletubbies", "Trollen"],
+    category: "🏎️ SPORT & F1",
+    question: "Hoe heet de populairste jaarlijkse voetbalgame van EA Sports die voorheen FIFA heette?",
+    options: ["eFootball", "EA Sports FC", "Ultimate Team", "UFL Football"],
     correctIndex: 1,
-    explanation: "De Smurfen met Grote Smurf!"
+    explanation: "EA Sports FC (EA FC 24 / EA FC 25)!"
   }
 ];
