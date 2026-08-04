@@ -3,10 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  CHALLENGES, 
-  CATEGORY_INFO, 
-  Challenge, 
-  ChallengeCategory 
+  CATEGORIES, 
+  CategoryChallenge 
 } from '../data/challenges';
 import { sounds } from '../utils/soundEffects';
 import { 
@@ -24,10 +22,10 @@ import {
   CheckCircle2, 
   XCircle, 
   Beer, 
-  ShieldAlert, 
   Clock, 
   ChevronRight,
-  Info
+  Info,
+  Layers
 } from 'lucide-react';
 
 interface Player {
@@ -50,11 +48,11 @@ export default function SlokkenVeilingEngine() {
   ]);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [maxBidLimit, setMaxBidLimit] = useState(15);
+  const [maxBidLimit, setMaxBidLimit] = useState(25);
   
   // Active Game State
   const [phase, setPhase] = useState<GamePhase>('SETUP');
-  const [deck, setDeck] = useState<Challenge[]>([]);
+  const [deck, setDeck] = useState<CategoryChallenge[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   
   // Round Bidding State
@@ -63,7 +61,6 @@ export default function SlokkenVeilingEngine() {
   const [activePlayerIndex, setActivePlayerIndex] = useState<number>(0);
   const [passedPlayerIds, setPassedPlayerIds] = useState<string[]>([]);
   const [challengerId, setChallengerId] = useState<string | null>(null);
-  const [selectedVictimId, setSelectedVictimId] = useState<string | null>(null);
 
   // Timer State
   const [timeRemaining, setTimeRemaining] = useState<number>(15);
@@ -94,7 +91,6 @@ export default function SlokkenVeilingEngine() {
     }
   };
 
-  // Sound toggle
   const toggleSound = () => {
     setSoundEnabled(!soundEnabled);
     triggerHaptic();
@@ -131,8 +127,8 @@ export default function SlokkenVeilingEngine() {
       alert("Voeg minimaal 2 spelers toe!");
       return;
     }
-    // Shuffle challenges deck
-    const shuffled = [...CHALLENGES].sort(() => Math.random() - 0.5);
+    // Shuffle categories deck
+    const shuffled = [...CATEGORIES].sort(() => Math.random() - 0.5);
     setDeck(shuffled);
     setCurrentCardIndex(0);
     startRound(shuffled[0], 0);
@@ -141,22 +137,20 @@ export default function SlokkenVeilingEngine() {
   };
 
   // Start a new Bidding Round
-  const startRound = (card: Challenge, roundIndex: number) => {
+  const startRound = (card: CategoryChallenge, roundIndex: number) => {
     setPhase('BIDDING');
     setHighestBidderId(null);
     setHighestBid(0);
     setPassedPlayerIds([]);
     setChallengerId(null);
-    setSelectedVictimId(null);
     
     // Rotate starting player for fairness
     const startingPlayerIdx = roundIndex % players.length;
     setActivePlayerIndex(startingPlayerIdx);
   };
 
-  const currentCard = deck[currentCardIndex] || CHALLENGES[0];
+  const currentCard = deck[currentCardIndex] || CATEGORIES[0];
   const activePlayer = players[activePlayerIndex] || players[0];
-  const categoryDetails = CATEGORY_INFO[currentCard.category];
 
   // Advance to next active player who hasn't passed
   const getNextActivePlayerIndex = (currentIdx: number, passedIds: string[]): number => {
@@ -169,11 +163,11 @@ export default function SlokkenVeilingEngine() {
     return nextIdx;
   };
 
-  // Handle placing a bid (+1, +2, etc.)
+  // Handle placing a bid (+1, +2, +3, etc.)
   const handlePlaceBid = (amount: number) => {
     const newBid = highestBid + amount;
     if (newBid > maxBidLimit) {
-      alert(`Het maximale bod is ingesteld op ${maxBidLimit} slokken!`);
+      alert(`Het maximale bod is ingesteld op ${maxBidLimit}!`);
       return;
     }
 
@@ -185,8 +179,8 @@ export default function SlokkenVeilingEngine() {
 
     const remainingActive = players.filter(p => !passedPlayerIds.includes(p.id));
     if (remainingActive.length === 1) {
-      // If everyone else passed, round ends immediately!
-      finishBiddingRound(activePlayer.id, newBid, false);
+      // Everyone else passed, highest bidder wins
+      finishBiddingRound(activePlayer.id, newBid);
     } else {
       const nextIdx = getNextActivePlayerIndex(activePlayerIndex, passedPlayerIds);
       setActivePlayerIndex(nextIdx);
@@ -204,8 +198,8 @@ export default function SlokkenVeilingEngine() {
     const remainingActive = players.filter(p => !newPassed.includes(p.id));
 
     if (remainingActive.length === 0) {
-      // All passed without any bids
       if (!highestBidderId) {
+        // Everyone passed with 0 bids
         setResolutionData({
           headline: "Niemand durfde te bieden!",
           subtext: "De veiling is afgeblazen.",
@@ -218,18 +212,18 @@ export default function SlokkenVeilingEngine() {
         return;
       } else {
         // Highest bidder wins!
-        finishBiddingRound(highestBidderId, highestBid, false);
+        finishBiddingRound(highestBidderId, highestBid);
       }
     } else if (remainingActive.length === 1 && highestBidderId === remainingActive[0].id) {
-      // Only the highest bidder is left, everyone else passed!
-      finishBiddingRound(highestBidderId, highestBid, false);
+      // Highest bidder is the only one remaining
+      finishBiddingRound(highestBidderId, highestBid);
     } else {
       const nextIdx = getNextActivePlayerIndex(activePlayerIndex, newPassed);
       setActivePlayerIndex(nextIdx);
     }
   };
 
-  // Handle "BEWIJS HET!" call in CAPACITY mode
+  // Handle "BEWIJS HET!" call
   const handleChallengeCall = () => {
     if (!highestBidderId) return;
     sounds.playChallenge();
@@ -241,7 +235,7 @@ export default function SlokkenVeilingEngine() {
     setIsTimerRunning(false);
   };
 
-  // Timer logic for CAPACITY challenges
+  // Timer logic for countdown
   useEffect(() => {
     if (phase === 'TIMED_CHALLENGE' && isTimerRunning && timeRemaining > 0) {
       timerIntervalRef.current = setInterval(() => {
@@ -282,9 +276,9 @@ export default function SlokkenVeilingEngine() {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       sounds.playSuccess();
       setResolutionData({
-        headline: `🔥 ${bidder.name} HEFT HET BEWEZEN!`,
-        subtext: `${bidder.name} noemde de ${highestBid} ${currentCard.unitName || 'items'} ruim binnen de tijd!`,
-        actionDetails: `${challenger.name} roep 'BEWIJS HET!' en verliest de gok!`,
+        headline: `🔥 ${bidder.name} HEEFT HET BEWEZEN!`,
+        subtext: `${bidder.name} noemde ruim ${highestBid} ${currentCard.categoryName} binnen 15 seconden!`,
+        actionDetails: `${challenger.name} riep 'BEWIJS HET!' en verliest de gok!`,
         drinkers: [{ name: challenger.name, sips: highestBid, reason: `Verkeerd uitgedaagd (${highestBid} slokken)` }]
       });
       updateSips([challenger.id], highestBid);
@@ -295,8 +289,8 @@ export default function SlokkenVeilingEngine() {
       const sipsToDrink = highestBid * 2;
       setResolutionData({
         headline: `❌ ${bidder.name} HEEFT GEFAALD!`,
-        subtext: `${bidder.name} haalde de ${highestBid} ${currentCard.unitName || 'items'} NIET!`,
-        actionDetails: `Gefaald in de uitdaging! Boete: Dubbele slokken!`,
+        subtext: `${bidder.name} haalde de ${highestBid} ${currentCard.categoryName} NIET binnen de tijd!`,
+        actionDetails: `Gefaald in de uitdaging! Straf: Dubbele slokken!`,
         drinkers: [{ name: bidder.name, sips: sipsToDrink, reason: `Gefaald in bod (${highestBid} × 2 slokken)` }]
       });
       updateSips([bidder.id], sipsToDrink);
@@ -305,66 +299,16 @@ export default function SlokkenVeilingEngine() {
     setPhase('RESOLUTION');
   };
 
-  // Finish bidding round without a challenge call
-  const finishBiddingRound = (winnerId: string, bidAmount: number, wasChallenged: boolean) => {
+  // Finish bidding round when everyone passed without a challenge
+  const finishBiddingRound = (winnerId: string, bidAmount: number) => {
     const winner = players.find(p => p.id === winnerId);
     if (!winner) return;
 
-    if (currentCard.category === 'ESCAPE') {
-      // In ESCAPE mode: The person who past or lost the bid HAS TO DO THE CHALLENGE OR DRINK
-      sounds.playGavel();
-      confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
-      setResolutionData({
-        headline: `🔨 VERKOCHT aan ${winner.name}!`,
-        subtext: `${winner.name} biedt het hoogste (${bidAmount} slokken) om te ONTKOMEN!`,
-        actionDetails: `${winner.name} is veilig! De overige spelers moeten de straf uitvoeren of slokken nemen!`,
-        drinkers: [{ name: winner.name, sips: bidAmount, reason: `Afgekocht voor ${bidAmount} slokken` }]
-      });
-      updateSips([winner.id], bidAmount);
-      updateBidsWon(winner.id);
-      setPhase('RESOLUTION');
-    } else if (currentCard.category === 'VICTIM') {
-      // High bidder selects a victim
-      sounds.playGavel();
-      setPhase('RESOLUTION');
-      // We will show victim selection inside resolution phase
-      setResolutionData({
-        headline: `🎯 ${winner.name} WINT DE MACHT!`,
-        subtext: `Geboden: ${bidAmount} slokken!`,
-        actionDetails: `Kies wie de sjaak is voor de opdracht!`,
-        drinkers: []
-      });
-      updateBidsWon(winner.id);
-    } else {
-      // CAPACITY mode without challenge call
-      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-      sounds.playSuccess();
-      setResolutionData({
-        headline: `🏆 ${winner.name} WINT DE VEILING!`,
-        subtext: `${winner.name} biedt ${bidAmount} ${currentCard.unitName || 'items'}!`,
-        actionDetails: `Niemand durfde 'BEWIJS HET!' te roepen! ${winner.name} hoeft niet te bewijzen.`,
-        drinkers: []
-      });
-      updateBidsWon(winner.id);
-      setPhase('RESOLUTION');
-    }
-  };
-
-  // Victim selection handler in VICTIM mode
-  const handleSelectVictim = (victimId: string) => {
-    const victim = players.find(p => p.id === victimId);
-    const winner = players.find(p => p.id === highestBidderId);
-    if (!victim || !winner) return;
-
-    sounds.playGavel();
-    confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-    setResolutionData({
-      headline: `🎯 ${victim.name} IS HET SLACHTOFFER!`,
-      subtext: `${winner.name} heeft ${victim.name} aangewezen!`,
-      actionDetails: `${currentCard.description}`,
-      drinkers: [{ name: victim.name, sips: 3, reason: `Aangewezen door ${winner.name}` }]
-    });
-    updateSips([victim.id], 3);
+    // Highest bidder can choose to prove it or just take the win!
+    setChallengerId(null);
+    setPhase('TIMED_CHALLENGE');
+    setTimeRemaining(currentCard.defaultTimeSeconds || 15);
+    setIsTimerRunning(false);
   };
 
   // Helper score updaters
@@ -386,7 +330,6 @@ export default function SlokkenVeilingEngine() {
     triggerHaptic();
     const nextIdx = currentCardIndex + 1;
     if (nextIdx >= deck.length) {
-      // Game Over / Stats
       setPhase('STATS');
       sounds.playSuccess();
     } else {
@@ -414,7 +357,7 @@ export default function SlokkenVeilingEngine() {
           <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
             DE SLOKKEN VEILING
           </h1>
-          <p className="text-slate-400 text-xs mt-1">Bied slokken, bluf je vrienden & ontkom aan straffen!</p>
+          <p className="text-slate-400 text-xs mt-1">Bied hoeveel jij kunt noemen & laat vrienden drinken!</p>
         </div>
 
         {/* Setup Card */}
@@ -464,22 +407,6 @@ export default function SlokkenVeilingEngine() {
               </div>
             ))}
           </div>
-
-          {/* Settings */}
-          <div className="border-t border-slate-800 pt-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Max slokken per bod:</span>
-              <select 
-                value={maxBidLimit} 
-                onChange={(e) => setMaxBidLimit(Number(e.target.value))}
-                className="bg-slate-950 border border-slate-700 text-amber-400 rounded-lg px-2 py-1 focus:outline-none"
-              >
-                <option value={10}>10 Slokken</option>
-                <option value={15}>15 Slokken</option>
-                <option value={20}>20 Slokken (Hardcore)</option>
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Action Button */}
@@ -507,7 +434,7 @@ export default function SlokkenVeilingEngine() {
         {/* Header bar */}
         <div className="flex items-center justify-between z-10 pt-2">
           <span className="text-xs font-bold text-slate-400">
-            Ronde {currentCardIndex + 1} / {deck.length}
+            Categorie {currentCardIndex + 1} / {deck.length}
           </span>
           <div className="flex items-center gap-2">
             <button 
@@ -526,39 +453,38 @@ export default function SlokkenVeilingEngine() {
           </div>
         </div>
 
-        {/* Challenge Card */}
-        <div className={`mt-3 z-10 rounded-2xl border ${categoryDetails.border} ${categoryDetails.bg} p-5 shadow-2xl relative overflow-hidden backdrop-blur-md`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${categoryDetails.color} bg-slate-950/60 border border-current/30`}>
-              <span>{categoryDetails.icon}</span>
-              {categoryDetails.label}
+        {/* Category Card */}
+        <div className="mt-3 z-10 rounded-2xl border border-amber-500/40 bg-amber-950/30 p-5 shadow-2xl relative overflow-hidden backdrop-blur-md">
+          <div className="flex items-center justify-between mb-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-400 bg-slate-950/60 border border-amber-500/30">
+              <Layers className="w-3.5 h-3.5" /> Nemen & Bieden
             </span>
           </div>
 
-          <h2 className="text-2xl font-black text-white mt-2 leading-tight">
+          <h2 className="text-3xl font-black text-white mt-2 leading-tight">
             {currentCard.title}
           </h2>
           <p className="text-slate-200 text-sm mt-2 leading-relaxed">
             {currentCard.description}
           </p>
 
-          <div className="mt-3 pt-3 border-t border-white/10 text-xs text-slate-400 flex items-center gap-1">
+          <div className="mt-3 pt-3 border-t border-white/10 text-xs text-slate-400 flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 flex-shrink-0 text-amber-400" />
-            <span>{categoryDetails.explanation}</span>
+            <span>Bied om de beurt. Roep <b>BEWIJS HET!</b> als je denkt dat de ander het niet kan!</span>
           </div>
         </div>
 
-        {/* Current Bid Status Display */}
+        {/* Current Highest Bid Display */}
         <div className="my-3 z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-center shadow-xl">
           <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-1">
             Hoogste Bod Momenteel
           </div>
           {highestBidder ? (
             <div className="animate-bounce">
-              <div className="text-3xl font-black text-amber-400">
-                {highestBid} {currentCard.category === 'CAPACITY' ? (currentCard.unitName || 'items') : 'Slokken'}
+              <div className="text-4xl font-black text-amber-400">
+                {highestBid} <span className="text-xl font-bold text-white">{currentCard.categoryName}</span>
               </div>
-              <div className="text-sm font-bold text-white mt-0.5">
+              <div className="text-sm font-bold text-slate-300 mt-1">
                 door <span className="text-orange-400 underline decoration-amber-400 decoration-2">{highestBidder.name}</span>
               </div>
             </div>
@@ -582,21 +508,21 @@ export default function SlokkenVeilingEngine() {
           <div className="grid grid-cols-3 gap-2">
             <button 
               onClick={() => handlePlaceBid(1)}
-              className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md"
+              className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
             >
-              +{1} {highestBid === 0 ? 'Slok' : 'Slok'}
+              +{1}
             </button>
             <button 
               onClick={() => handlePlaceBid(2)}
-              className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md"
+              className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
             >
-              +2 Slokken
+              +2
             </button>
             <button 
               onClick={() => handlePlaceBid(3)}
-              className="bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md"
+              className="bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
             >
-              +3 Slokken
+              +3
             </button>
           </div>
 
@@ -604,22 +530,22 @@ export default function SlokkenVeilingEngine() {
             {/* PASS Button */}
             <button 
               onClick={handlePass}
-              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-3 rounded-xl transition text-sm flex items-center justify-center gap-1.5"
+              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5"
             >
               <XCircle className="w-4 h-4 text-red-400" /> PAS (Ik haak af)
             </button>
 
-            {/* BEWIJS HET Button (Only in CAPACITY mode if there is a bid) */}
-            {currentCard.category === 'CAPACITY' && highestBidderId && highestBidderId !== activePlayer.id ? (
+            {/* BEWIJS HET Button */}
+            {highestBidderId && highestBidderId !== activePlayer.id ? (
               <button 
                 onClick={handleChallengeCall}
-                className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3 rounded-xl transition text-sm animate-pulse flex items-center justify-center gap-1 shadow-lg shadow-red-600/30"
+                className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3.5 rounded-xl transition text-sm animate-pulse flex items-center justify-center gap-1 shadow-lg shadow-red-600/30"
               >
                 <Zap className="w-4 h-4 fill-current" /> BEWIJS HET!
               </button>
             ) : (
               <div className="bg-slate-950/40 border border-slate-800 rounded-xl py-3 text-center text-xs text-slate-500 flex items-center justify-center">
-                {passedPlayerIds.includes(activePlayer.id) ? 'Gepast' : 'Kies je bod'}
+                Plaats een bod
               </div>
             )}
           </div>
@@ -666,14 +592,19 @@ export default function SlokkenVeilingEngine() {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
         <div className="text-center pt-4 z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500/20 border border-red-500/40 rounded-full text-red-400 text-xs font-bold mb-2 animate-pulse">
-            <AlertTriangle className="w-4 h-4" />
-            BEWIJS HET UITDAGING!
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-400 text-xs font-bold mb-2">
+            <Gavel className="w-4 h-4" />
+            NOEM ZE HARDOP!
           </div>
           <h2 className="text-3xl font-black text-white">{currentCard.title}</h2>
-          <p className="text-slate-400 text-xs mt-1">
-            <span className="text-amber-400 font-bold">{bidder?.name}</span> moet <span className="text-white font-black text-base">{highestBid}</span> {currentCard.unitName || 'items'} noemen!
+          <p className="text-slate-300 text-sm mt-2">
+            <span className="text-amber-400 font-extrabold">{bidder?.name}</span> moet nu hardop <span className="text-white font-black text-xl">{highestBid}</span> {currentCard.categoryName} noemen!
           </p>
+          {challenger && (
+            <p className="text-xs text-red-400 mt-1 font-semibold">
+              (Uitgedaagd door {challenger.name})
+            </p>
+          )}
         </div>
 
         {/* Timer display */}
@@ -689,12 +620,12 @@ export default function SlokkenVeilingEngine() {
           <div className="mt-6 flex justify-center gap-3">
             <button 
               onClick={toggleTimer}
-              className={`px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 ${
+              className={`px-6 py-3 rounded-xl font-black text-sm transition flex items-center gap-2 ${
                 isTimerRunning ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'
               }`}
             >
               <Clock className="w-5 h-5" />
-              {isTimerRunning ? 'PAUZE' : 'START TIMER'}
+              {isTimerRunning ? 'PAUZE' : 'START TIMER (15 SEC)'}
             </button>
           </div>
         </div>
@@ -702,7 +633,7 @@ export default function SlokkenVeilingEngine() {
         {/* Outcome Decision Buttons */}
         <div className="space-y-3 pb-6 z-10">
           <div className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Is het gelukt?
+            Is het gelukt binnen de tijd?
           </div>
           <div className="grid grid-cols-2 gap-3">
             <button 
@@ -711,7 +642,9 @@ export default function SlokkenVeilingEngine() {
             >
               <CheckCircle2 className="w-6 h-6" />
               <span>GELUKT!</span>
-              <span className="text-[10px] font-normal opacity-80">{challenger?.name} drinkt {highestBid} slokken</span>
+              <span className="text-[10px] font-normal opacity-80">
+                {challenger ? `${challenger.name} drinkt ${highestBid} slokken` : `Veiling gewonnen!`}
+              </span>
             </button>
 
             <button 
@@ -732,8 +665,6 @@ export default function SlokkenVeilingEngine() {
   // RENDER: RESOLUTION PHASE
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
-    const winner = players.find(p => p.id === highestBidderId);
-
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
         {/* Background glow */}
@@ -748,53 +679,33 @@ export default function SlokkenVeilingEngine() {
           </p>
         </div>
 
-        {/* Victim Selection UI if VICTIM card */}
-        {currentCard.category === 'VICTIM' && resolutionData.drinkers.length === 0 ? (
-          <div className="my-auto z-10 bg-slate-900 border border-purple-500/40 rounded-2xl p-5 space-y-4 text-center">
-            <h3 className="text-lg font-black text-purple-400 flex items-center justify-center gap-2">
-              <ShieldAlert className="w-5 h-5" /> Kies wie er 3 slokken moet drinken & de opdracht doet:
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {players.filter(p => p.id !== highestBidderId).map(p => (
-                <button 
-                  key={p.id}
-                  onClick={() => handleSelectVictim(p.id)}
-                  className="bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 hover:border-purple-400 font-bold py-3 rounded-xl text-purple-200 transition active:scale-95"
-                >
-                  {p.name}
-                </button>
+        {/* Drinkers Summary Card */}
+        <div className="my-auto z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
+          <div className="text-xs font-black uppercase tracking-widest text-slate-400 text-center">
+            Slokken Verdeling
+          </div>
+
+          {resolutionData.drinkers.length > 0 ? (
+            <div className="space-y-3">
+              {resolutionData.drinkers.map((d, i) => (
+                <div key={i} className="flex items-center justify-between bg-slate-950 border border-amber-500/30 p-4 rounded-xl">
+                  <div>
+                    <div className="font-black text-lg text-white">{d.name}</div>
+                    <div className="text-xs text-slate-400">{d.reason}</div>
+                  </div>
+                  <div className="text-2xl font-black text-amber-400 flex items-center gap-1.5">
+                    <Beer className="w-6 h-6 text-amber-400" />
+                    <span>{d.sips} {d.sips === 1 ? 'Slok' : 'Slokken'}</span>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        ) : (
-          /* Drinkers Summary Card */
-          <div className="my-auto z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xl">
-            <div className="text-xs font-black uppercase tracking-widest text-slate-400 text-center">
-              Slokken Verdeling
+          ) : (
+            <div className="text-center py-4 text-slate-400 text-sm">
+              Niemand hoeft te drinken in deze ronde! Veilig!
             </div>
-
-            {resolutionData.drinkers.length > 0 ? (
-              <div className="space-y-3">
-                {resolutionData.drinkers.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-950 border border-amber-500/30 p-4 rounded-xl">
-                    <div>
-                      <div className="font-black text-lg text-white">{d.name}</div>
-                      <div className="text-xs text-slate-400">{d.reason}</div>
-                    </div>
-                    <div className="text-2xl font-black text-amber-400 flex items-center gap-1.5">
-                      <Beer className="w-6 h-6 text-amber-400" />
-                      <span>{d.sips} {d.sips === 1 ? 'Slok' : 'Slokken'}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-slate-400 text-sm">
-                Niemand hoeft te drinken in deze ronde! Veilig!
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Next round action */}
         <div className="pb-6 z-10 space-y-2">
@@ -802,7 +713,7 @@ export default function SlokkenVeilingEngine() {
             onClick={nextCard}
             className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-slate-950 font-black text-lg py-4 rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
           >
-            <span>VOLGENDE VEILING</span>
+            <span>VOLGENDE CATEGORIE</span>
             <ChevronRight className="w-6 h-6" />
           </button>
         </div>

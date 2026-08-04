@@ -1,210 +1,220 @@
-export type ChallengeCategory = 'CAPACITY' | 'ESCAPE' | 'VICTIM';
-
-export interface Challenge {
+export interface CategoryChallenge {
   id: string;
   title: string;
-  category: ChallengeCategory;
-  description: string;
-  defaultTimeSeconds?: number;
-  unitName?: string; // e.g. "items", "seconden"
-  suggestedStartBid?: number;
+  categoryName: string; // e.g. "Sigarettenmerken"
+  description: string;  // e.g. "Hoeveel verschillende sigaretten- of tabaksmerken kun jij noemen in 15 seconden?"
+  defaultTimeSeconds: number;
 }
 
-export const CATEGORY_INFO: Record<ChallengeCategory, { label: string; color: string; bg: string; border: string; icon: string; explanation: string }> = {
-  CAPACITY: {
-    label: "Bluff & Bewijs",
-    color: "text-amber-400",
-    bg: "bg-amber-950/40",
-    border: "border-amber-500/50",
-    icon: "⚡",
-    explanation: "Bied hoeveel jij er kunt noemen of doen binnen de tijd! Iemand kan 'BEWIJS HET!' roepen."
-  },
-  ESCAPE: {
-    label: "Ontkom aan de Straf",
-    color: "text-emerald-400",
-    bg: "bg-emerald-950/40",
-    border: "border-emerald-500/50",
-    icon: "🛡️",
-    explanation: "Bied slokken om deze uitdaging of straf NIET te hoeven doen. Wie past moet het doen!"
-  },
-  VICTIM: {
-    label: "Koop een Slachtoffer",
-    color: "text-purple-400",
-    bg: "bg-purple-950/40",
-    border: "border-purple-500/50",
-    icon: "🎯",
-    explanation: "De hoogste bieder mag bepalen WIE van de groep deze actie moet uitvoeren!"
-  }
-};
-
-export const CHALLENGES: Challenge[] = [
-  // --- CAPACITY (Bluff & Bewijs) ---
+export const CATEGORIES: CategoryChallenge[] = [
   {
-    id: "cap-1",
-    title: "Biermerken Noemen",
-    category: "CAPACITY",
-    description: "Hoeveel verschillende biermerken kun jij noemen in 15 seconden?",
-    unitName: "biermerken",
+    id: "cat-1",
+    title: "🚬 Sigaretten & Tabak",
+    categoryName: "sigarettenmerken",
+    description: "Hoeveel verschillende sigaretten- of tabaksmerken kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-2",
-    title: "Automerken met een B of K",
-    category: "CAPACITY",
-    description: "Hoeveel automerken die beginnen met een B of K kun jij noemen in 15 seconden?",
-    unitName: "automerken",
+    id: "cat-2",
+    title: "🍺 Biermerken",
+    categoryName: "biermerken",
+    description: "Hoeveel verschillende biermerken (pils, speciaalbier, pilsners) kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-3",
-    title: "Bekende Nederlanders",
-    category: "CAPACITY",
-    description: "Hoeveel BN'ers (voetballers, BN'ers, presentatoren) kun jij noemen binnen 15 seconden?",
-    unitName: "BN'ers",
+    id: "cat-3",
+    title: "🚗 Automerken",
+    categoryName: "automerken",
+    description: "Hoeveel automerken kun jij opnoemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-4",
-    title: "Push-ups in 20 Sec",
-    category: "CAPACITY",
-    description: "Hoeveel nette push-ups kun jij op de grond doen in 20 seconden?",
-    unitName: "push-ups",
-    defaultTimeSeconds: 20
-  },
-  {
-    id: "cap-5",
-    title: "Nederlandse Steden",
-    category: "CAPACITY",
-    description: "Hoeveel Nederlandse steden met meer dan 50.000 inwoners kun jij opnoemen in 15 seconden?",
-    unitName: "steden",
+    id: "cat-4",
+    title: "🍟 Fastfood & Frituursnacks",
+    categoryName: "snacks / fastfoodketens",
+    description: "Hoeveel fastfoodketens of bekende frituursnacks kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-6",
-    title: "Fastfood Keten & Snacks",
-    category: "CAPACITY",
-    description: "Hoeveel bekende frituursnacks of fastfoodketens kun jij opnoemen in 15 seconden?",
-    unitName: "snacks",
+    id: "cat-5",
+    title: "🏙️ Nederlandse & Belgische Steden",
+    categoryName: "steden",
+    description: "Hoeveel steden in Nederland of België kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-7",
-    title: "Engelse Scheldwoorden / Slang",
-    category: "CAPACITY",
-    description: "Hoeveel verschillende Engelse scheld- of straattaalwoorden kun jij opnoemen in 10 seconden?",
-    unitName: "woorden",
+    id: "cat-6",
+    title: "🛒 Supermarkten",
+    categoryName: "supermarkten",
+    description: "Hoeveel supermarktketens (Nederlands of buitenlands) kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-7",
+    title: "🤬 Scheldwoorden & Straattaal",
+    categoryName: "scheldwoorden",
+    description: "Hoeveel scheldwoorden of straattaalwoorden kun jij opnoemen in 10 seconden?",
     defaultTimeSeconds: 10
   },
   {
-    id: "cap-8",
-    title: "Festivals in Nederland/België",
-    category: "CAPACITY",
-    description: "Hoeveel muziekfestivals kun jij noemen in 15 seconden?",
-    unitName: "festivals",
+    id: "cat-8",
+    title: "⚽ Voetbalclubs",
+    categoryName: "voetbalclubs",
+    description: "Hoeveel professionele voetbalclubs (binnen- of buitenland) kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-9",
-    title: "Groenten met een S of P",
-    category: "CAPACITY",
-    description: "Hoeveel fruit- of groentesoorten kun jij noemen in 15 seconden?",
-    unitName: "soorten",
+    id: "cat-9",
+    title: "🍹 Sterke Drank & Cocktails",
+    categoryName: "alcohol / cocktails",
+    description: "Hoeveel soorten sterke drank of bekende cocktails kun jij opnoemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
-    id: "cap-10",
-    title: "Hondenrassen",
-    category: "CAPACITY",
-    description: "Hoeveel hondenrassen kun jij opnoemen in 15 seconden?",
-    unitName: "rassen",
+    id: "cat-10",
+    title: "👟 Kleding- & Schoenenmerken",
+    categoryName: "kledingmerken",
+    description: "Hoeveel kleding- of schoenenmerken kun jij noemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
-
-  // --- ESCAPE (Ontkom aan de Straf) ---
   {
-    id: "esc-1",
-    title: "IJsblokje / Koud Water in je Nek",
-    category: "ESCAPE",
-    description: "Laat iemand een ijsblokje of een scheut ijskoud water achter in je shirt of nek glijden! Bied slokken om dit te ontlopen.",
+    id: "cat-11",
+    title: "🎬 Netflix Series & Films",
+    categoryName: "films / series",
+    description: "Hoeveel films of Netflix-series kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-2",
-    title: "Maffe Groepsapp Selfie",
-    category: "ESCAPE",
-    description: "Stuur een idiote selfie zonder context naar je familie-app of vrienden-groepsapp. Bied slokken om te ontsnappen!",
+    id: "cat-12",
+    title: "🎤 Zangers, Rappers & Bandjes",
+    categoryName: "artiesten / rappers",
+    description: "Hoeveel bekende zangers, zangeressen of rappers kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-3",
-    title: "Imiteer een Dronken Boswachter",
-    category: "ESCAPE",
-    description: "Doe 30 seconden lang een gepassioneerde imitatie van een dronken boswachter rond het kampvuur. Wie past moet optreden!",
+    id: "cat-13",
+    title: "🥤 Energiedrankjes & Frisdrank",
+    categoryName: "frisdrank / energiedrank",
+    description: "Hoeveel frisdrank- of energiedrankmerken kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-4",
-    title: "Laat iemand je Kapsel Stylen",
-    category: "ESCAPE",
-    description: "De medespeler rechts van je mag je haar voor de rest van de avond helemaal maffiseren met water/gel. Bied om te ontkomen!",
+    id: "cat-14",
+    title: "🏖️ Vakantiebestemmingen / Eilanden",
+    categoryName: "vakantielanden / eilanden",
+    description: "Hoeveel vakantielanden of eilanden kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-5",
-    title: "Kikkersprongen rond het Vuur",
-    category: "ESCAPE",
-    description: "Doe 5 kikkersprongen rond het kampvuur terwijl je kwaakt. Wie past mag springen!",
+    id: "cat-15",
+    title: "🍕 Pizza's & Italiaanse Gerechten",
+    categoryName: "pizza's / pasta's",
+    description: "Hoeveel soorten pizza's of Italiaanse gerechten kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-6",
-    title: "Serenade aan een Medespeler",
-    category: "ESCAPE",
-    description: "Zing 30 seconden lang een romantisch geïmproviseerd liefdesliedje voor de persoon tegenover je.",
+    id: "cat-16",
+    title: "📱 Apps op je Telefoon",
+    categoryName: "apps",
+    description: "Hoeveel mobiele apps (Social media, games, tools) kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-7",
-    title: "Eet een Lepel Scherp / Zuur",
-    category: "ESCAPE",
-    description: "Eet een lepel mosterd, mayo, sambal of citroensap zonder te trekken met je gezicht!",
+    id: "cat-17",
+    title: "🎪 Festivals & Feesten",
+    categoryName: "festivals",
+    description: "Hoeveel muziekfestivals of feestconcepten kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "esc-8",
-    title: "Mobiel in het Engels",
-    category: "ESCAPE",
-    description: "Zet de taal van je mobiel tot het einde van het spel op het Engels (of Duits). Bied slokken om te ontsnappen!",
-  },
-
-  // --- VICTIM (Koop een Slachtoffer) ---
-  {
-    id: "vic-1",
-    title: "Slokken Adjen",
-    category: "VICTIM",
-    description: "De hoogste bieder wijst iemand aan die direct 4 flinke slokken van zijn of haar drankje moet adjen!",
+    id: "cat-18",
+    title: "🚘 Automodellen",
+    categoryName: "automodellen",
+    description: "Hoeveel specifieke automodellen (bijv. Golf, Polo, Civic, Mustang) kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "vic-2",
-    title: "Vreemd Accent Verplicht",
-    category: "VICTIM",
-    description: "De hoogste bieder kiest een speler die de komende 3 rondes met een Vlaams, Amsterdams of Duits accent MOET praten.",
+    id: "cat-19",
+    title: "🏕️ Spullen voor op de Camping",
+    categoryName: "campingspullen",
+    description: "Hoeveel voorwerpen die je meeneemt naar de camping kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "vic-3",
-    title: "De Barmhartige Samaritaan",
-    category: "VICTIM",
-    description: "Kies iemand die voor iedereen de komende ronde het drankje moet inschenken of halen.",
+    id: "cat-20",
+    title: "🥔 Chips- & Snoepmerken",
+    categoryName: "chips / snoep",
+    description: "Hoeveel chipssoorten of snoepmerken kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "vic-4",
-    title: "Telefoon Afstaan",
-    category: "VICTIM",
-    description: "Wijs iemand aan die zijn/haar telefoon open op tafel moet leggen. Meldingen worden hardop voorgelezen!",
+    id: "cat-21",
+    title: "🐕 Hondenrassen & Dieren",
+    categoryName: "hondenrassen / dieren",
+    description: "Hoeveel hondenrassen of wilde dieren kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "vic-5",
-    title: "Slokken Verdelen",
-    category: "VICTIM",
-    description: "De hoogste bieder mag 5 slokken willekeurig verdelen over alle medespelers!",
+    id: "cat-22",
+    title: "🎧 Bekende DJ's",
+    categoryName: "DJ's",
+    description: "Hoeveel bekende nationale en internationale DJ's kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   },
   {
-    id: "vic-6",
-    title: "De Stilte Straf",
-    category: "VICTIM",
-    description: "Wijs iemand aan die 2 rondes lang helemaal NIET meer mag praten. Zegt hij/zij toch wat? 2 slokken straf per woord!",
+    id: "cat-23",
+    title: "🏎️ Formule 1 Coureurs & Teams",
+    categoryName: "F1 coureurs / teams",
+    description: "Hoeveel Formule 1 coureurs of teams (nu of vroeger) kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-24",
+    title: "🧀 Kaassoorten & Broodbeleg",
+    categoryName: "kaas / broodbeleg",
+    description: "Hoeveel kaassoorten of soorten broodbeleg kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-25",
+    title: "🎮 Videogames & Consoles",
+    categoryName: "games / consoles",
+    description: "Hoeveel bekende videogames of spelcomputers kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-26",
+    title: "🗼 Hoofdsteden van de Wereld",
+    categoryName: "hoofdsteden",
+    description: "Hoeveel wereld-hoofdsteden kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-27",
+    title: "🥦 Groenten & Fruitsoorten",
+    categoryName: "groenten / fruit",
+    description: "Hoeveel groenten of fruitsoorten kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-28",
+    title: "🎢 Pretparken & Dierentuinen",
+    categoryName: "pretparken / dierentuinen",
+    description: "Hoeveel pretparken of dierentuinen kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-29",
+    title: "📺 Bekende TV Programma's",
+    categoryName: "TV programma's",
+    description: "Hoeveel Nederlandse TV programma's of reality shows kun jij opnoemen in 15 seconden?",
+    defaultTimeSeconds: 15
+  },
+  {
+    id: "cat-30",
+    title: "⚓ Scheeps- / Bootsoorten",
+    categoryName: "bootsoorten",
+    description: "Hoeveel soorten vaartuigen of boten kun jij noemen in 15 seconden?",
+    defaultTimeSeconds: 15
   }
 ];
