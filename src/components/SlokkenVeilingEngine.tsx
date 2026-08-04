@@ -9,9 +9,11 @@ import {
   WILDCARD_VICTORY_DARE, 
   WILDCARD_PENALTY_DARE, 
   WHEEL_SEGMENTS,
+  NEVER_HAVE_I_EVER_QUESTIONS,
   CategoryChallenge, 
   Dare,
-  WheelSegment
+  WheelSegment,
+  NeverHaveIEverCard
 } from '../data/challenges';
 import { sounds } from '../utils/soundEffects';
 import { 
@@ -38,7 +40,7 @@ import {
   Disc,
   Shield,
   PlusCircle,
-  Flag
+  Sparkle
 } from 'lucide-react';
 
 interface Player {
@@ -51,14 +53,14 @@ interface Player {
   highestBidPlaced: number;
 }
 
-type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'HORSE_RACE' | 'CUSTOM_CATEGORY_CREATOR' | 'RESOLUTION' | 'STATS';
+type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'HORSE_RACE' | 'CUSTOM_CATEGORY_CREATOR' | 'NEVER_HAVE_I_EVER' | 'RESOLUTION' | 'STATS';
 
 interface Horse {
   id: number;
   name: string;
   color: string;
   bgClass: string;
-  progress: number; // 0 to 100
+  progress: number;
 }
 
 export default function SlokkenVeilingEngine() {
@@ -86,6 +88,10 @@ export default function SlokkenVeilingEngine() {
   const [passedPlayerIds, setPassedPlayerIds] = useState<string[]>([]);
   const [challengerId, setChallengerId] = useState<string | null>(null);
 
+  // Never Have I Ever State
+  const [nhieIndex, setNhieIndex] = useState(0);
+  const [nhieQuestions, setNhieQuestions] = useState<NeverHaveIEverCard[]>([]);
+
   // Wheel of Fortune State
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
@@ -105,6 +111,11 @@ export default function SlokkenVeilingEngine() {
   // Custom Category Creator State
   const [customCatTitle, setCustomCatTitle] = useState('');
   const [customCatDesc, setCustomCatDesc] = useState('');
+
+  // Quizmaster 60s Timer State
+  const [quizmasterTimer, setQuizmasterTimer] = useState<number>(60);
+  const [isQuizmasterRunning, setIsQuizmasterRunning] = useState<boolean>(false);
+  const qmIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Timer State
   const [timeRemaining, setTimeRemaining] = useState<number>(15);
@@ -302,6 +313,36 @@ export default function SlokkenVeilingEngine() {
     };
   }, [phase, isTimerRunning, timeRemaining]);
 
+  // Quizmaster 60s Timer Logic
+  useEffect(() => {
+    if (isQuizmasterRunning && quizmasterTimer > 0) {
+      qmIntervalRef.current = setInterval(() => {
+        setQuizmasterTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(qmIntervalRef.current as NodeJS.Timeout);
+            setIsQuizmasterRunning(false);
+            sounds.playGavel();
+            return 0;
+          }
+          sounds.playTick();
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (qmIntervalRef.current) clearInterval(qmIntervalRef.current);
+    }
+
+    return () => {
+      if (qmIntervalRef.current) clearInterval(qmIntervalRef.current);
+    };
+  }, [isQuizmasterRunning, quizmasterTimer]);
+
+  const toggleQuizmasterTimer = () => {
+    if (quizmasterTimer === 0) setQuizmasterTimer(60);
+    setIsQuizmasterRunning(!isQuizmasterRunning);
+    sounds.playBid();
+  };
+
   const toggleTimer = () => {
     setIsTimerRunning(!isTimerRunning);
     sounds.playBid();
@@ -330,6 +371,16 @@ export default function SlokkenVeilingEngine() {
         sounds.playBid();
       }
     }
+  };
+
+  // Trigger Never Have I Ever mode
+  const startNeverHaveIEver = () => {
+    const shuffledNHIE = [...NEVER_HAVE_I_EVER_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
+    setNhieQuestions(shuffledNHIE);
+    setNhieIndex(0);
+    setPhase('NEVER_HAVE_I_EVER');
+    sounds.playGavel();
+    confetti({ particleCount: 80, spread: 60 });
   };
 
   // Handle Challenge Result
@@ -471,7 +522,7 @@ export default function SlokkenVeilingEngine() {
             victor = h;
             return h;
           }
-          const increment = Math.floor(Math.random() * 12) + 3; // Random speed boost 3-15%
+          const increment = Math.floor(Math.random() * 12) + 3;
           const newProgress = Math.min(100, h.progress + increment);
           if (newProgress >= 100 && !victor) {
             hasWinner = true;
@@ -510,7 +561,6 @@ export default function SlokkenVeilingEngine() {
       defaultTimeSeconds: timerSpeed
     };
 
-    // Insert custom category right next in deck!
     const newDeck = [...deck];
     newDeck.splice(currentCardIndex + 1, 0, newCatCard);
     setDeck(newDeck);
@@ -687,7 +737,14 @@ export default function SlokkenVeilingEngine() {
           <span className="text-xs font-bold text-slate-400">
             Categorie {currentCardIndex + 1} / {deck.length}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button 
+              onClick={startNeverHaveIEver} 
+              className="p-2 bg-orange-950 text-orange-400 rounded-lg border border-orange-800 text-xs font-bold flex items-center gap-1"
+              title="Ik Heb Nog Nooit..."
+            >
+              🍻 Ik Heb Nog Nooit
+            </button>
             <button 
               onClick={triggerHorseRace} 
               className="p-2 bg-amber-950 text-amber-400 rounded-lg border border-amber-800"
@@ -701,20 +758,6 @@ export default function SlokkenVeilingEngine() {
               title="Rad van Slokken"
             >
               <Disc className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')} 
-              className="p-2 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800"
-              title="Eigen Categorie Maken"
-            >
-              <PlusCircle className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setPhase('STATS')} 
-              className="p-2 bg-slate-900 text-amber-400 rounded-lg border border-slate-800"
-              title="Scorebord"
-            >
-              <Trophy className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -848,6 +891,58 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
+  // RENDER: NEVER HAVE I EVER MODE
+  // ==========================================
+  if (phase === 'NEVER_HAVE_I_EVER') {
+    const currentNHIE = nhieQuestions[nhieIndex] || NEVER_HAVE_I_EVER_QUESTIONS[0];
+
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/20 border border-orange-500/40 rounded-full text-orange-400 text-xs font-bold mb-1">
+            🍻 IK HEB NOG NOOIT... (Vraag {nhieIndex + 1} / {nhieQuestions.length})
+          </div>
+          <h2 className="text-3xl font-black text-amber-300">Kampvuur Biecht Ronde</h2>
+        </div>
+
+        <div className="my-auto z-10 bg-gradient-to-b from-slate-900 via-slate-900 to-amber-950/40 border border-amber-500/40 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+          <div className="text-2xl font-black text-white leading-relaxed">
+            &quot;{currentNHIE.statement}&quot;
+          </div>
+          <p className="text-xs text-amber-300 font-bold uppercase tracking-wider">
+            🍻 ALLES WAAR IS? DRINK AANWEZIG 1 FLINKE SLOK!
+          </p>
+        </div>
+
+        <div className="pb-6 z-10 space-y-2">
+          {nhieIndex < nhieQuestions.length - 1 ? (
+            <button 
+              onClick={() => {
+                setNhieIndex(nhieIndex + 1);
+                sounds.playBid();
+              }}
+              className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-95"
+            >
+              <span>VOLGENDE BIECHT VRAAG</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                setPhase('BIDDING');
+                sounds.playSuccess();
+              }}
+              className="w-full bg-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl active:scale-95"
+            >
+              VEILING HERVATTEN
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
   // RENDER: TIMED CHALLENGE PHASE
   // ==========================================
   if (phase === 'TIMED_CHALLENGE') {
@@ -938,12 +1033,11 @@ export default function SlokkenVeilingEngine() {
           <p className="text-slate-300 text-xs mt-1">Zet slokken in op een paard & start de race!</p>
         </div>
 
-        {/* Visual Race Track */}
         <div className="my-auto z-10 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-2xl">
           <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-800 pb-2">
             <span>START</span>
             <span>RACE BAAN</span>
-            <span className="text-amber-400 flex items-center gap-1"><Flag className="w-4 h-4" /> FINISH</span>
+            <span className="text-amber-400 flex items-center gap-1">FINISH</span>
           </div>
 
           <div className="space-y-4">
@@ -974,7 +1068,6 @@ export default function SlokkenVeilingEngine() {
           )}
         </div>
 
-        {/* Action Controls */}
         <div className="pb-6 z-10 space-y-2">
           {!winningHorse ? (
             <button 
@@ -1005,7 +1098,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: CUSTOM CATEGORY CREATOR (Feature)
+  // RENDER: CUSTOM CATEGORY CREATOR
   // ==========================================
   if (phase === 'CUSTOM_CATEGORY_CREATOR') {
     return (
@@ -1142,7 +1235,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: RESOLUTION PHASE
+  // RENDER: RESOLUTION PHASE WITH QUIZMASTER TIMER
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
     return (
@@ -1158,23 +1251,27 @@ export default function SlokkenVeilingEngine() {
           </p>
         </div>
 
-        {/* Dynamic Dare / Wildcard Card */}
+        {/* Dynamic Dare Card */}
         {activeDare && (
           <div className={`my-2 z-10 border rounded-2xl p-4 shadow-2xl relative overflow-hidden text-center backdrop-blur-md transition-all ${
-            activeDare.isWildcard 
+            activeDare.isQuizmaster
+              ? 'bg-gradient-to-b from-amber-900/90 via-orange-950 to-slate-950 border-amber-400 animate-pulse shadow-amber-500/30'
+              : activeDare.isWildcard 
               ? 'bg-gradient-to-b from-amber-900/90 via-purple-950 to-slate-950 border-amber-400 animate-pulse shadow-amber-500/30' 
               : 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-amber-500/50'
           }`}>
             <div className="flex items-center justify-between mb-2">
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                activeDare.isWildcard
+                activeDare.isQuizmaster
+                  ? 'bg-amber-400 text-slate-950 font-black'
+                  : activeDare.isWildcard
                   ? 'bg-amber-400 text-slate-950 font-black'
                   : activeDare.type === 'VICTORY' 
                   ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
                   : 'bg-red-950 text-red-400 border border-red-500/40'
               }`}>
-                {activeDare.isWildcard ? <Crown className="w-3.5 h-3.5" /> : <Sparkles className="w-3 h-3" />}
-                {activeDare.isWildcard ? '⚡ ZELDSAME WILDCARD' : activeDare.type === 'VICTORY' ? 'OVERWINNINGS-RECHT' : 'EXTRA BOETE OPDRACHT'}
+                {activeDare.isQuizmaster ? <Crown className="w-3.5 h-3.5" /> : activeDare.isWildcard ? <Crown className="w-3.5 h-3.5" /> : <Sparkles className="w-3 h-3" />}
+                {activeDare.isQuizmaster ? '👑 DE QUIZMASTER (1 MINUUT)' : activeDare.isWildcard ? '⚡ ZELDSAME WILDCARD' : activeDare.type === 'VICTORY' ? 'OVERWINNINGS-RECHT' : 'EXTRA BOETE OPDRACHT'}
               </span>
 
               <button 
@@ -1186,27 +1283,27 @@ export default function SlokkenVeilingEngine() {
               </button>
             </div>
 
-            <h3 className={`text-lg font-black ${activeDare.isWildcard ? 'text-amber-300 text-xl' : 'text-white'}`}>
+            <h3 className={`text-lg font-black ${activeDare.isQuizmaster || activeDare.isWildcard ? 'text-amber-300 text-xl' : 'text-white'}`}>
               {activeDare.title}
             </h3>
-            <p className={`text-xs mt-1 leading-relaxed font-medium ${activeDare.isWildcard ? 'text-amber-100 font-bold' : 'text-amber-200'}`}>
+            <p className={`text-xs mt-1 leading-relaxed font-medium ${activeDare.isQuizmaster || activeDare.isWildcard ? 'text-amber-100 font-bold' : 'text-amber-200'}`}>
               {activeDare.description}
             </p>
 
-            <div className="mt-3 flex justify-center gap-2">
-              <button 
-                onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
-                className="bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
-              >
-                <PlusCircle className="w-3 h-3" /> Maak Eigen Categorie
-              </button>
-              <button 
-                onClick={triggerHorseRace}
-                className="bg-amber-600/30 border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
-              >
-                🐎 Paardenrace Minigame
-              </button>
-            </div>
+            {/* Quizmaster 60s Timer Control */}
+            {activeDare.isQuizmaster && (
+              <div className="mt-3 pt-2 border-t border-amber-400/30">
+                <button 
+                  onClick={toggleQuizmasterTimer}
+                  className={`w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 ${
+                    isQuizmasterRunning ? 'bg-amber-400 text-slate-950' : 'bg-orange-500 text-slate-950'
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  {isQuizmasterRunning ? `PAUZE QUIZMASTER TIMER (${quizmasterTimer}s)` : `👑 START 60 SEC QUIZMASTER TIMER`}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

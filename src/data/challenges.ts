@@ -12,58 +12,54 @@ export interface Dare {
   title: string;
   description: string;
   isWildcard?: boolean;
+  isQuizmaster?: boolean;
 }
 
-export interface WheelSegment {
+export interface NeverHaveIEverCard {
   id: string;
-  title: string;
-  description: string;
-  color: string;
-  icon: string;
+  statement: string;
 }
 
-export const WHEEL_SEGMENTS: WheelSegment[] = [
+export const NEVER_HAVE_I_EVER_QUESTIONS: NeverHaveIEverCard[] = [
   {
-    id: "wheel-1",
-    title: "💥 JACKPOT!",
-    description: "De draaier is veilig! Iedereen behalve de draaier neemt direct 2 strafslokken!",
-    color: "from-amber-500 to-orange-500",
-    icon: "🎰"
+    id: "nhie-1",
+    statement: "Ik heb nog nooit gedaan alsof ik sliep om het opruimen of de afwas op de camping te ontlopen!"
   },
   {
-    id: "wheel-2",
-    title: "🚰 HYDRATIE CHECK",
-    description: "Kampvuur regel: Iedereen neemt verplicht een flinke slok water!",
-    color: "from-blue-500 to-cyan-500",
-    icon: "🚰"
+    id: "nhie-2",
+    statement: "Ik heb nog nooit in het wild of in de natuur geplast waar het eigenlijk absoluut niet mocht!"
   },
   {
-    id: "wheel-3",
-    title: "⚡ DUBBELE INZET",
-    description: "Biedingen & strafslokken in de VOLGENDE veiling tellen DUBBEL!",
-    color: "from-purple-500 to-pink-500",
-    icon: "⚡"
+    id: "nhie-3",
+    statement: "Ik heb nog nooit volgehouden dat ik de weg wist, terwijl we eigenlijk straalverdwaald waren!"
   },
   {
-    id: "wheel-4",
-    title: "🎲 SHOT ROULETTE",
-    description: "Het rad kiest 1 willekeurige speler die zijn/haar glas in 1x leeg moet adje!",
-    color: "from-red-600 to-rose-600",
-    icon: "🍾"
+    id: "nhie-4",
+    statement: "Ik heb nog nooit stiekem iemands drankje of glas bijgeschonken zonder dat diegene het doorhad!"
   },
   {
-    id: "wheel-5",
-    title: "🪑 STOEL-RUIL",
-    description: "Iedereen staat op en schuift 1 plek door naar rechts rond het kampvuur!",
-    color: "from-emerald-500 to-green-600",
-    icon: "🪑"
+    id: "nhie-5",
+    statement: "Ik heb nog nooit een vette smoes gebruikt om een groepsactiviteit te skippen!"
   },
   {
-    id: "wheel-6",
-    title: "🎯 SLOKKEN-SWAP",
-    description: "De speler met de minste slokken geeft 2 slokken aan de speler met de meeste slokken!",
-    color: "from-yellow-500 to-amber-600",
-    icon: "🔄"
+    id: "nhie-6",
+    statement: "Ik heb nog nooit een hele nacht doorgehaald bij een kampvuur tot de zon opkwam!"
+  },
+  {
+    id: "nhie-7",
+    statement: "Ik heb nog nooit spullen in mijn tas/tent gevonden die eigenlijk van een medespeler waren!"
+  },
+  {
+    id: "nhie-8",
+    statement: "Ik heb nog nooit per ongeluk in de verkeerde tent of op de verkeerde stoel gezeten!"
+  },
+  {
+    id: "nhie-9",
+    statement: "Ik heb nog nooit beweerd dat ik ergens heel goed in was, en faalde vervolgens keihard!"
+  },
+  {
+    id: "nhie-10",
+    statement: "Ik heb nog nooit een dronken appje of spraakbericht gestuurd waar ik de volgende ochtend spijt van had!"
   }
 ];
 
@@ -84,6 +80,13 @@ export const WILDCARD_PENALTY_DARE: Dare = {
 };
 
 export const VICTORY_DARES: Dare[] = [
+  {
+    id: "vic-qm",
+    type: "VICTORY",
+    title: "👑 DE QUIZMASTER (1 MINUUT DE BAAS)",
+    description: "Jij bent nu 1 MINUUT (60 sec) lang de Quizmaster! Iedereen om het kampvuur moet 60 seconden lang ALLES doen wat jij zegt! Weigeren = 3 slokken!",
+    isQuizmaster: true
+  },
   {
     id: "vic-1",
     type: "VICTORY",
@@ -167,7 +170,59 @@ export const PENALTY_DARES: Dare[] = [
   }
 ];
 
+export const WHEEL_SEGMENTS = [
+  {
+    id: "wheel-1",
+    title: "💥 JACKPOT!",
+    description: "De draaier is veilig! Iedereen behalve de draaier neemt direct 2 strafslokken!",
+    color: "from-amber-500 to-orange-500",
+    icon: "🎰"
+  },
+  {
+    id: "wheel-2",
+    title: "🚰 HYDRATIE CHECK",
+    description: "Kampvuur regel: Iedereen neemt verplicht een flinke slok water!",
+    color: "from-blue-500 to-cyan-500",
+    icon: "🚰"
+  },
+  {
+    id: "wheel-3",
+    title: "⚡ DUBBELE INZET",
+    description: "Biedingen & strafslokken in de VOLGENDE veiling tellen DUBBEL!",
+    color: "from-purple-500 to-pink-500",
+    icon: "⚡"
+  },
+  {
+    id: "wheel-4",
+    title: "🎲 SHOT ROULETTE",
+    description: "Het rad kiest 1 willekeurige speler die zijn/haar glas in 1x leeg moet adje!",
+    color: "from-red-600 to-rose-600",
+    icon: "🍾"
+  },
+  {
+    id: "wheel-5",
+    title: "🪑 STOEL-RUIL",
+    description: "Iedereen staat op en schuift 1 plek door naar rechts rond het kampvuur!",
+    color: "from-emerald-500 to-green-600",
+    icon: "🪑"
+  },
+  {
+    id: "wheel-6",
+    title: "🎯 SLOKKEN-SWAP",
+    description: "De speler met de minste slokken geeft 2 slokken aan de speler met de meeste slokken!",
+    color: "from-yellow-500 to-amber-600",
+    icon: "🔄"
+  }
+];
+
 export const CATEGORIES: CategoryChallenge[] = [
+  {
+    id: "cat-qm",
+    title: "👑 De Quizmaster Vragen",
+    categoryName: "quizvragen",
+    description: "Hoeveel algemene kennis- of kampvuurvragen kun jij goed beantwoorden binnen 30 seconden?",
+    defaultTimeSeconds: 30
+  },
   {
     id: "cat-1",
     title: "🚬 Sigaretten & Tabak",
