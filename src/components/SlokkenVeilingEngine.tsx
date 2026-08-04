@@ -54,7 +54,9 @@ import {
   Siren,
   Plus,
   Trash2,
-  Edit3
+  Edit3,
+  Database,
+  Globe
 } from 'lucide-react';
 
 interface Player {
@@ -105,6 +107,10 @@ export default function SlokkenVeilingEngine() {
   const [customDareType, setCustomDareType] = useState<'VICTORY' | 'PENALTY'>('VICTORY');
   const [customDareTitle, setCustomDareTitle] = useState('');
   const [customDareDesc, setCustomDareDesc] = useState('');
+
+  // Neon DB Leaderboards State
+  const [globalLeaderboard, setGlobalLeaderboard] = useState<any[]>([]);
+  const [isDbSynced, setIsDbSynced] = useState(false);
 
   // Active Game State
   const [phase, setPhase] = useState<GamePhase>('SETUP');
@@ -188,6 +194,62 @@ export default function SlokkenVeilingEngine() {
     sounds.setEnabled(soundEnabled);
   }, [soundEnabled]);
 
+  // Load custom items from Neon DB on mount
+  useEffect(() => {
+    const fetchDbItems = async () => {
+      try {
+        const catRes = await fetch('/api/db/categories');
+        const catData = await catRes.json();
+        if (catData.success && catData.categories.length > 0) {
+          const dbCats: CategoryChallenge[] = catData.categories.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            categoryName: c.category_name,
+            description: c.description,
+            defaultTimeSeconds: c.default_time_seconds || 15
+          }));
+          setDeck(prev => [...dbCats, ...prev]);
+        }
+
+        const dareRes = await fetch('/api/db/dares');
+        const dareData = await dareRes.json();
+        if (dareData.success && dareData.dares.length > 0) {
+          const dbDares: Dare[] = dareData.dares.map((d: any) => ({
+            id: d.id,
+            type: d.type as 'VICTORY' | 'PENALTY',
+            title: d.title,
+            description: d.description
+          }));
+          const vicDares = dbDares.filter(d => d.type === 'VICTORY');
+          const penDares = dbDares.filter(d => d.type === 'PENALTY');
+          if (vicDares.length > 0) setVictoryDaresPool(prev => [...vicDares, ...prev]);
+          if (penDares.length > 0) setPenaltyDaresPool(prev => [...penDares, ...prev]);
+        }
+        setIsDbSynced(true);
+      } catch (err) {
+        console.log("DB sync fallback:", err);
+      }
+    };
+    fetchDbItems();
+  }, []);
+
+  const saveStatsToDb = async (updatedPlayers: Player[]) => {
+    try {
+      await fetch('/api/db/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players: updatedPlayers })
+      });
+      const leaderRes = await fetch('/api/db/stats');
+      const leaderData = await leaderRes.json();
+      if (leaderData.success) {
+        setGlobalLeaderboard(leaderData.leaderboards);
+      }
+    } catch (err) {
+      console.log("Stats DB sync error:", err);
+    }
+  };
+
   const triggerHaptic = () => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
       try {
@@ -209,7 +271,7 @@ export default function SlokkenVeilingEngine() {
     triggerHaptic();
   };
 
-  const saveCustomDare = () => {
+  const saveCustomDare = async () => {
     if (!customDareTitle.trim() || !customDareDesc.trim()) {
       alert("Vul zowel een titel als een beschrijving in!");
       return;
@@ -228,13 +290,23 @@ export default function SlokkenVeilingEngine() {
       setPenaltyDaresPool(prev => [newDare, ...prev]);
     }
 
+    try {
+      await fetch('/api/db/dares', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDare)
+      });
+    } catch (err) {
+      console.log("Neon DB save error:", err);
+    }
+
     setCustomDareTitle('');
     setCustomDareDesc('');
     setShowCustomDareModal(false);
     confetti({ particleCount: 90, spread: 60 });
     sounds.playSuccess();
 
-    alert(`✨ Eigen ${customDareType === 'VICTORY' ? 'Belonings' : 'Boete'}-opdracht toegevoegd aan het spel!`);
+    alert(`✨ Eigen ${customDareType === 'VICTORY' ? 'Belonings' : 'Boete'}-opdracht opgeslagen in Neon DB!`);
   };
 
   const addActiveRule = () => {
@@ -290,7 +362,7 @@ export default function SlokkenVeilingEngine() {
       alert("Voeg minimaal 2 spelers toe!");
       return;
     }
-    const shuffled = [...CATEGORIES].sort(() => Math.random() - 0.5);
+    const shuffled = [...deck.length > 0 ? deck : CATEGORIES].sort(() => Math.random() - 0.5);
     setDeck(shuffled);
     setCurrentCardIndex(0);
     setActiveRules([]);
@@ -755,8 +827,8 @@ export default function SlokkenVeilingEngine() {
     }, 250);
   };
 
-  // Save Custom Category Card
-  const saveCustomCategory = () => {
+  // Save Custom Category Card to Neon DB & Deck
+  const saveCustomCategory = async () => {
     if (!customCatTitle.trim() || !customCatDesc.trim()) {
       alert("Vul zowel een titel als een beschrijving in!");
       return;
@@ -774,12 +846,22 @@ export default function SlokkenVeilingEngine() {
     newDeck.splice(currentCardIndex + 1, 0, newCatCard);
     setDeck(newDeck);
 
+    try {
+      await fetch('/api/db/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCatCard)
+      });
+    } catch (err) {
+      console.log("Neon DB save category error:", err);
+    }
+
     setCustomCatTitle('');
     setCustomCatDesc('');
     confetti({ particleCount: 90, spread: 60 });
     sounds.playSuccess();
 
-    alert("✨ Eigen categorie toegevoegd! Hij verschijnt nu direct als volgende kaart!");
+    alert("✨ Eigen categorie opgeslagen in Neon DB! Hij verschijnt nu direct als volgende kaart!");
     setPhase('BIDDING');
   };
 
@@ -801,6 +883,7 @@ export default function SlokkenVeilingEngine() {
     const nextIdx = currentCardIndex + 1;
     if (nextIdx >= deck.length) {
       setPhase('STATS');
+      saveStatsToDb(players);
       sounds.playSuccess();
     } else {
       setCurrentCardIndex(nextIdx);
@@ -835,6 +918,11 @@ export default function SlokkenVeilingEngine() {
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-full text-orange-400 text-sm font-semibold mb-2">
             <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
             <span>Kampvuur Drankspel</span>
+            {isDbSynced && (
+              <span className="ml-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Database className="w-3 h-3" /> Neon DB Live
+              </span>
+            )}
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
             DE SLOKKEN VEILING
@@ -1193,7 +1281,7 @@ export default function SlokkenVeilingEngine() {
                 onClick={saveCustomDare}
                 className="w-full bg-gradient-to-r from-purple-500 to-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs"
               >
-                TOEVOEGEN AAN SPEL
+                OPSLAAN IN NEON DATABASE
               </button>
             </div>
           </div>
@@ -1907,7 +1995,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: STATS & DYNAMIC AWARDS
+  // RENDER: STATS & DYNAMIC AWARDS WITH NEON DB GLOBAL LEADERBOARD
   // ==========================================
   const awards = getAwards();
 
@@ -1951,7 +2039,24 @@ export default function SlokkenVeilingEngine() {
         </div>
       </div>
 
-      <div className="my-2 z-10 space-y-2 max-h-44 overflow-y-auto">
+      {globalLeaderboard.length > 0 && (
+        <div className="my-2 z-10 bg-slate-900/90 border border-emerald-500/40 p-3 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between text-xs font-black text-emerald-400">
+            <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> 🏆 GLOBALE NEON DB EINDSTAND</span>
+            <span className="text-[9px] text-slate-400">Alle Speelsessies</span>
+          </div>
+          <div className="space-y-1 max-h-28 overflow-y-auto">
+            {globalLeaderboard.map((lb, idx) => (
+              <div key={idx} className="flex items-center justify-between bg-slate-950 p-2 rounded-lg text-xs">
+                <span className="font-bold text-white">#{idx + 1} {lb.player_name}</span>
+                <span className="text-amber-400 font-extrabold">{lb.total_wins} gew. / {lb.total_sips} slokken</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="my-2 z-10 space-y-2 max-h-36 overflow-y-auto">
         {[...players].sort((a, b) => b.sipsDrunk - a.sipsDrunk).map((p, idx) => (
           <div key={p.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2.5">
