@@ -51,7 +51,9 @@ import {
   Bomb,
   Users,
   Scroll,
-  Flame as FlameIcon
+  Siren,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 interface Player {
@@ -101,6 +103,9 @@ export default function SlokkenVeilingEngine() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isDoubleBidsActive, setIsDoubleBidsActive] = useState(false);
   const [activeRules, setActiveRules] = useState<string[]>([]);
+  const [newRuleInput, setNewRuleInput] = useState('');
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [showSnitchModal, setShowSnitchModal] = useState(false);
   const [isAllInBid, setIsAllInBid] = useState(false);
   
   // Round Bidding State
@@ -193,6 +198,26 @@ export default function SlokkenVeilingEngine() {
     sounds.playSuccess();
     confetti({ particleCount: 80, spread: 60 });
     triggerHaptic();
+  };
+
+  const addActiveRule = () => {
+    if (!newRuleInput.trim()) return;
+    setActiveRules(prev => [...prev, newRuleInput.trim()]);
+    setNewRuleInput('');
+    sounds.playBid();
+  };
+
+  const removeActiveRule = (idx: number) => {
+    setActiveRules(prev => prev.filter((_, i) => i !== idx));
+    sounds.playPass();
+  };
+
+  const penalizeSnitchTarget = (playerId: string) => {
+    sounds.playFail();
+    triggerHaptic();
+    updateSips([playerId], 1);
+    setShowSnitchModal(false);
+    alert(`🚨 SLOKKE-POLITIE: ${players.find(p => p.id === playerId)?.name} heeft een regel gebroken & neemt 1 strafslok!`);
   };
 
   // Add / Remove Player
@@ -873,30 +898,38 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: CLEAN BIDDING PHASE WITH ALL-IN BLUF & PROOST BUTTON
+  // RENDER: CLEAN BIDDING PHASE WITH ALL-IN BLUF, RULES BANNER & SNITCH BUTTON
   // ==========================================
   if (phase === 'BIDDING') {
     const highestBidder = players.find(p => p.id === highestBidderId);
 
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
-        <div className="flex items-center justify-between z-10 pt-2 border-b border-slate-900 pb-2">
+        <div className="flex items-center justify-between z-10 pt-2 border-b border-slate-900 pb-2 gap-1">
           <span className="text-xs font-bold text-slate-400">
             Ronde {currentCardIndex + 1} / {deck.length}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button 
               onClick={triggerProostCheers}
-              className="px-2.5 py-1 bg-amber-500 text-slate-950 rounded-lg font-black text-xs flex items-center gap-1 active:scale-95 shadow"
-              title="Proost op het Kampvuur!"
+              className="px-2 py-1 bg-amber-500 text-slate-950 rounded-lg font-black text-[11px] flex items-center gap-1 active:scale-95 shadow"
+              title="Proost!"
             >
               🍻 PROOST!
             </button>
             <button 
-              onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
-              className="px-2.5 py-1 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800 text-[11px] font-bold flex items-center gap-1"
+              onClick={() => setShowSnitchModal(true)}
+              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[11px] flex items-center gap-1 active:scale-95 shadow animate-pulse"
+              title="Meld Regelovertreding!"
             >
-              <PlusCircle className="w-3.5 h-3.5" /> + Categorie
+              <Siren className="w-3.5 h-3.5" /> VERKLIKKER!
+            </button>
+            <button 
+              onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
+              className="p-1.5 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800 text-[11px] font-bold"
+              title="Categorie Toevoegen"
+            >
+              <PlusCircle className="w-4 h-4" />
             </button>
             <button 
               onClick={() => setPhase('STATS')} 
@@ -908,57 +941,72 @@ export default function SlokkenVeilingEngine() {
           </div>
         </div>
 
+        {/* ACTIVE RULES BANNER */}
+        <div className="mt-2 z-10 bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pr-1">
+            <Scroll className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            {activeRules.length > 0 ? (
+              <span className="font-bold text-amber-300 truncate">
+                📜 {activeRules[activeRules.length - 1]}
+              </span>
+            ) : (
+              <span className="text-slate-500 italic">Geen actieve kampvuur regels</span>
+            )}
+          </div>
+          <button 
+            onClick={() => setShowRuleModal(true)}
+            className="px-2 py-1 bg-slate-800 text-amber-400 hover:bg-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1 flex-shrink-0 ml-1"
+          >
+            <Plus className="w-3 h-3" /> Regel ({activeRules.length})
+          </button>
+        </div>
+
         {isDoubleBidsActive && (
-          <div className="z-10 mt-2 bg-purple-600/30 border border-purple-500/50 rounded-xl py-1.5 px-3 text-center text-xs font-black text-purple-300 animate-bounce">
+          <div className="z-10 mt-1.5 bg-purple-600/30 border border-purple-500/50 rounded-xl py-1.5 px-3 text-center text-xs font-black text-purple-300 animate-bounce">
             ⚡ DUBBELE INZET ACTIEF VANUIT HET RAD!
           </div>
         )}
 
-        <div className="mt-3 z-10 rounded-2xl border border-amber-500/40 bg-amber-950/30 p-5 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="mt-2.5 z-10 rounded-2xl border border-amber-500/40 bg-amber-950/30 p-4 shadow-2xl relative overflow-hidden backdrop-blur-md">
           <div className="flex items-center justify-between mb-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-400 bg-slate-950/60 border border-amber-500/30">
-              <Layers className="w-3.5 h-3.5" /> Nemen & Bieden
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-400 bg-slate-950/60 border border-amber-500/30">
+              <Layers className="w-3 h-3" /> Nemen & Bieden
             </span>
           </div>
 
-          <h2 className="text-3xl font-black text-white mt-2 leading-tight">
+          <h2 className="text-2.5xl font-black text-white mt-1 leading-tight">
             {currentCard.title}
           </h2>
-          <p className="text-slate-200 text-sm mt-2 leading-relaxed">
+          <p className="text-slate-200 text-xs mt-1.5 leading-relaxed">
             {currentCard.description}
           </p>
-
-          <div className="mt-3 pt-3 border-t border-white/10 text-xs text-slate-400 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 flex-shrink-0 text-amber-400" />
-            <span>Bied om de beurt. Roep <b>BEWIJS HET!</b> als je denkt dat hij/zij het niet kan!</span>
-          </div>
         </div>
 
-        <div className="my-3 z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-center shadow-xl">
-          <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-1">
+        <div className="my-2 z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 text-center shadow-xl">
+          <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">
             Hoogste Bod Momenteel
           </div>
           {highestBidder ? (
             <div className="animate-bounce">
-              <div className="text-4xl font-black text-amber-400">
-                {highestBid} <span className="text-xl font-bold text-white">{currentCard.categoryName}</span>
+              <div className="text-3.5xl font-black text-amber-400">
+                {highestBid} <span className="text-lg font-bold text-white">{currentCard.categoryName}</span>
               </div>
-              <div className="text-sm font-bold text-slate-300 mt-1">
+              <div className="text-xs font-bold text-slate-300 mt-0.5">
                 door <span className="text-orange-400 underline decoration-amber-400 decoration-2">{highestBidder.name}</span>
                 {isAllInBid && <span className="ml-2 text-red-500 font-black text-xs uppercase animate-ping">🔥 ALL-IN!</span>}
               </div>
             </div>
           ) : (
-            <div className="py-2 text-slate-500 text-sm font-medium italic">
+            <div className="py-1 text-slate-500 text-xs font-medium italic">
               Nog geen bod geplaatst! Start bij 1.
             </div>
           )}
         </div>
 
-        <div className="z-10 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="text-xs font-bold text-slate-400">Aan de beurt om te bieden:</span>
-            <span className="text-base font-black text-amber-300 flex items-center gap-1">
+        <div className="z-10 bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span className="text-xs font-bold text-slate-400">Bieder:</span>
+            <span className="text-sm font-black text-amber-300 flex items-center gap-1">
               <Flame className="w-4 h-4 text-orange-500 animate-pulse" /> {activePlayer.name}
             </span>
           </div>
@@ -966,44 +1014,44 @@ export default function SlokkenVeilingEngine() {
           <div className="grid grid-cols-4 gap-1.5">
             <button 
               onClick={() => handlePlaceBid(1)}
-              className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
+              className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-sm"
             >
               +1
             </button>
             <button 
               onClick={() => handlePlaceBid(2)}
-              className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
+              className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-sm"
             >
               +2
             </button>
             <button 
               onClick={() => handlePlaceBid(3)}
-              className="bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
+              className="bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-sm"
             >
               +3
             </button>
             <button 
               onClick={() => handlePlaceBid(5, true)}
-              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white font-black py-3 rounded-xl transition text-center shadow-md text-xs border border-red-400/50 flex flex-col items-center justify-center"
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white font-black py-2.5 rounded-xl transition text-center shadow-md text-xs border border-red-400/50 flex flex-col items-center justify-center"
               title="3x Slokken Risico!"
             >
               <span>+5</span>
-              <span className="text-[9px] text-red-200">ALL-IN</span>
+              <span className="text-[8px] text-red-200 uppercase font-black">ALL-IN</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
             <button 
               onClick={handlePass}
-              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5"
+              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5"
             >
-              <XCircle className="w-4 h-4 text-red-400" /> PAS (Ik haak af)
+              <XCircle className="w-4 h-4 text-red-400" /> PAS (Afhaken)
             </button>
 
             {highestBidderId && highestBidderId !== activePlayer.id ? (
               <button 
                 onClick={handleChallengeCall}
-                className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3.5 rounded-xl transition text-sm animate-pulse flex items-center justify-center gap-1 shadow-lg shadow-red-600/30"
+                className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3 rounded-xl transition text-xs animate-pulse flex items-center justify-center gap-1 shadow-lg shadow-red-600/30"
               >
                 <Zap className="w-4 h-4 fill-current" /> BEWIJS HET!
               </button>
@@ -1014,9 +1062,9 @@ export default function SlokkenVeilingEngine() {
             )}
           </div>
 
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
             <span>Spelers in ronde:</span>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1">
               {players.map(p => {
                 const isPassed = passedPlayerIds.includes(p.id);
                 const isHighest = p.id === highestBidderId;
@@ -1024,7 +1072,7 @@ export default function SlokkenVeilingEngine() {
                 return (
                   <span 
                     key={p.id}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                       isPassed 
                         ? 'bg-slate-950 text-slate-600 line-through' 
                         : isHighest 
@@ -1041,6 +1089,75 @@ export default function SlokkenVeilingEngine() {
             </div>
           </div>
         </div>
+
+        {/* RULE MODAL POPUP */}
+        {showRuleModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl w-full max-w-xs space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-amber-300 text-base flex items-center gap-1.5">
+                  <Scroll className="w-4 h-4" /> Kampvuur Regels
+                </h3>
+                <button onClick={() => setShowRuleModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              </div>
+
+              <div className="flex gap-1.5">
+                <input 
+                  type="text" 
+                  placeholder="Bijv. Alleen drinken met links..."
+                  value={newRuleInput}
+                  onChange={(e) => setNewRuleInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addActiveRule()}
+                  className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                />
+                <button onClick={addActiveRule} className="bg-amber-500 text-slate-950 font-black px-3 rounded-xl text-xs">+</button>
+              </div>
+
+              <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                {activeRules.map((rule, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800 text-xs">
+                    <span className="text-amber-200">{rule}</span>
+                    <button onClick={() => removeActiveRule(idx)} className="text-red-400 p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={() => setShowRuleModal(false)} className="w-full bg-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs">
+                KLAAR
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SNITCH (VERKLIKKER) MODAL POPUP */}
+        {showSnitchModal && (
+          <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-slate-900 border border-red-500/50 p-5 rounded-2xl w-full max-w-xs space-y-3 shadow-2xl text-center">
+              <Siren className="w-8 h-8 text-red-500 mx-auto animate-bounce" />
+              <h3 className="font-black text-white text-lg">🚨 REGELOVERTREDING!</h3>
+              <p className="text-xs text-slate-300">Wie heeft een kampvuur-regel of afspraak gebroken?</p>
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pt-1">
+                {players.map(p => (
+                  <button 
+                    key={p.id}
+                    onClick={() => penalizeSnitchTarget(p.id)}
+                    className="w-full bg-slate-950 hover:bg-red-950/40 border border-slate-800 hover:border-red-500 p-2.5 rounded-xl text-xs font-bold text-white flex items-center justify-between"
+                  >
+                    <span>{p.name}</span>
+                    <span className="text-red-400 font-extrabold">+1 STRAFSLOK</span>
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={() => setShowSnitchModal(false)} className="w-full bg-slate-800 text-slate-400 font-bold py-2 rounded-xl text-xs">
+                Annuleren
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1171,7 +1288,7 @@ export default function SlokkenVeilingEngine() {
             Iedereen telt af: 3... 2... 1... Wijs TEGELIJK iemand aan!
           </div>
           <p className="text-xs text-slate-300">
-            De persoon met de meeste vingers op zich gericht drinkt <b>2 STRAFSLOKKEN!</b>
+            De persoon met de meesste vingers op zich gericht drinkt <b>2 STRAFSLOKKEN!</b>
           </p>
         </div>
 
