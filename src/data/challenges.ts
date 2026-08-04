@@ -8,10 +8,27 @@ export interface CategoryChallenge {
 
 export interface Dare {
   id: string;
-  type: 'VICTORY' | 'PENALTY';
+  type: 'VICTORY' | 'PENALTY' | 'WILDCARD';
   title: string;
   description: string;
+  isWildcard?: boolean;
 }
+
+export const WILDCARD_VICTORY_DARE: Dare = {
+  id: "wild-vic",
+  type: "WILDCARD",
+  title: "👑 WILDCARD: ATJE GEVEN!",
+  description: "ZELDSAME WILDCARD! Jij hebt de categorie gehaald! Wijs iemand aan die direct zijn/haar hele glas in 1x leeg moet ADJEN!",
+  isWildcard: true
+};
+
+export const WILDCARD_PENALTY_DARE: Dare = {
+  id: "wild-pen",
+  type: "WILDCARD",
+  title: "💥 WILDCARD: ATJE TREKKEN!",
+  description: "ZELDSAME WILDCARD BOETE! Jij hebt gefaald in je bod! Trek direct je hele glas in 1x helemaal leeg!",
+  isWildcard: true
+};
 
 export const VICTORY_DARES: Dare[] = [
   {
@@ -22,31 +39,37 @@ export const VICTORY_DARES: Dare[] = [
   },
   {
     id: "vic-2",
+    type: "VICTORY",
     title: "❓ Eerlijke Vraag Stellen",
     description: "Je mag één willekeurige speler EEN directe vraag stellen. Diegene moet eerlijk antwoorden of 3 slokken drinken!"
   },
   {
     id: "vic-3",
+    type: "VICTORY",
     title: "🍹 Hofleverancier",
     description: "Wijs een medespeler aan die jouw drankje de komende 2 rondes moet inschenken of halen."
   },
   {
     id: "vic-4",
+    type: "VICTORY",
     title: "📜 Mini-Regel Bepalen",
     description: "Verzin 1 mini-regel voor de komende ronde (bijv. 'Niemand mag namen noemen' of 'Alleen met links drinken'). Overtreding = 2 slokken!"
   },
   {
     id: "vic-5",
+    type: "VICTORY",
     title: "🎯 Slokken Verdelen",
     description: "Je mag 4 bonus-slokken willekeurig verdelen over je medespelers!"
   },
   {
     id: "vic-6",
+    type: "VICTORY",
     title: "🤫 De Stilte Straf",
     description: "Wijs een medespeler aan die 1 ronde lang helemaal NIET meer mag praten. Zegt hij toch wat? 2 slokken per woord!"
   },
   {
     id: "vic-7",
+    type: "VICTORY",
     title: "📱 Melding Voorlezen",
     description: "Wijs iemand aan die het laaste ontvangen berichtje op zijn/haar telefoon hardop moet voorlezen (of 3 slokken drinkt)!"
   }

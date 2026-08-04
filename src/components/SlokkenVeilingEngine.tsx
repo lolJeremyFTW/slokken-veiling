@@ -6,6 +6,8 @@ import {
   CATEGORIES, 
   VICTORY_DARES, 
   PENALTY_DARES, 
+  WILDCARD_VICTORY_DARE, 
+  WILDCARD_PENALTY_DARE, 
   CategoryChallenge, 
   Dare 
 } from '../data/challenges';
@@ -21,7 +23,6 @@ import {
   RotateCcw, 
   Trophy, 
   Zap, 
-  AlertTriangle, 
   CheckCircle2, 
   XCircle, 
   Beer, 
@@ -30,7 +31,8 @@ import {
   Info,
   Layers,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Crown
 } from 'lucide-react';
 
 interface Player {
@@ -262,30 +264,53 @@ export default function SlokkenVeilingEngine() {
     sounds.playBid();
   };
 
-  // Draw random dare
-  const drawDare = (type: 'VICTORY' | 'PENALTY') => {
-    const list = type === 'VICTORY' ? VICTORY_DARES : PENALTY_DARES;
-    const randomDare = list[Math.floor(Math.random() * list.length)];
-    setActiveDare(randomDare);
-    sounds.playBid();
+  // Draw random dare with 10% WILDCARD chance
+  const drawDare = (type: 'VICTORY' | 'PENALTY' | 'WILDCARD') => {
+    const isWildcardRoll = Math.random() < 0.10; // 10% chance for Wildcard
+    
+    if (type === 'VICTORY') {
+      if (isWildcardRoll) {
+        setActiveDare(WILDCARD_VICTORY_DARE);
+        sounds.playChallenge();
+      } else {
+        const randomDare = VICTORY_DARES[Math.floor(Math.random() * VICTORY_DARES.length)];
+        setActiveDare(randomDare);
+        sounds.playBid();
+      }
+    } else {
+      if (isWildcardRoll) {
+        setActiveDare(WILDCARD_PENALTY_DARE);
+        sounds.playChallenge();
+      } else {
+        const randomDare = PENALTY_DARES[Math.floor(Math.random() * PENALTY_DARES.length)];
+        setActiveDare(randomDare);
+        sounds.playBid();
+      }
+    }
   };
 
-  // Handle Challenge Result (Completed vs Failed)
+  // Handle Challenge Result
   const handleChallengeOutcome = (success: boolean) => {
     const bidder = players.find(p => p.id === highestBidderId);
     const challenger = players.find(p => p.id === challengerId);
 
     if (!bidder) return;
 
-    if (success) {
-      // SUCCESS: Pick a victory dare
-      const randomVictoryDare = VICTORY_DARES[Math.floor(Math.random() * VICTORY_DARES.length)];
-      setActiveDare(randomVictoryDare);
+    // Check low chance (10%) Wildcard roll
+    const isWildcardRoll = Math.random() < 0.10;
 
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      sounds.playSuccess();
+    if (success) {
+      if (isWildcardRoll) {
+        setActiveDare(WILDCARD_VICTORY_DARE);
+        sounds.playChallenge();
+      } else {
+        const randomVictoryDare = VICTORY_DARES[Math.floor(Math.random() * VICTORY_DARES.length)];
+        setActiveDare(randomVictoryDare);
+        sounds.playSuccess();
+      }
+
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       
-      const victimName = challenger ? challenger.name : 'De verliezers';
       setResolutionData({
         headline: `🔥 ${bidder.name} HEEFT HET BEWEZEN!`,
         subtext: `${bidder.name} noemde ruim ${highestBid} ${currentCard.categoryName} binnen 15 seconden!`,
@@ -295,16 +320,20 @@ export default function SlokkenVeilingEngine() {
       if (challenger) updateSips([challenger.id], highestBid);
       updateBidsWon(bidder.id);
     } else {
-      // FAILED: Pick a penalty dare
-      const randomPenaltyDare = PENALTY_DARES[Math.floor(Math.random() * PENALTY_DARES.length)];
-      setActiveDare(randomPenaltyDare);
+      if (isWildcardRoll) {
+        setActiveDare(WILDCARD_PENALTY_DARE);
+        sounds.playChallenge();
+      } else {
+        const randomPenaltyDare = PENALTY_DARES[Math.floor(Math.random() * PENALTY_DARES.length)];
+        setActiveDare(randomPenaltyDare);
+        sounds.playFail();
+      }
 
-      sounds.playFail();
       const sipsToDrink = highestBid * 2;
       setResolutionData({
         headline: `❌ ${bidder.name} HEEFT GEFAALD!`,
         subtext: `${bidder.name} haalde de ${highestBid} ${currentCard.categoryName} NIET binnen de tijd!`,
-        actionDetails: `Gefaald! Boete: Dubbele slokken + Boete Opdracht!`,
+        actionDetails: `Gefaald! Boete: Dubbele slokken!`,
         drinkers: [{ name: bidder.name, sips: sipsToDrink, reason: `Gefaald in bod (${highestBid} × 2 slokken)` }]
       });
       updateSips([bidder.id], sipsToDrink);
@@ -653,7 +682,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: RESOLUTION PHASE WITH DYNAMIC DARES
+  // RENDER: RESOLUTION PHASE WITH WILDCARD SUPPORT
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
     return (
@@ -669,15 +698,23 @@ export default function SlokkenVeilingEngine() {
           </p>
         </div>
 
-        {/* Dynamic Dare / Mini Challenge Card */}
+        {/* Dynamic Dare / Wildcard Card */}
         {activeDare && (
-          <div className="my-2 z-10 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-amber-500/50 rounded-2xl p-4 shadow-2xl relative overflow-hidden text-center">
+          <div className={`my-2 z-10 border rounded-2xl p-4 shadow-2xl relative overflow-hidden text-center backdrop-blur-md transition-all ${
+            activeDare.isWildcard 
+              ? 'bg-gradient-to-b from-amber-900/90 via-purple-950 to-slate-950 border-amber-400 animate-pulse shadow-amber-500/30' 
+              : 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-amber-500/50'
+          }`}>
             <div className="flex items-center justify-between mb-2">
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                activeDare.type === 'VICTORY' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'
+                activeDare.isWildcard
+                  ? 'bg-amber-400 text-slate-950 font-black'
+                  : activeDare.type === 'VICTORY' 
+                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
+                  : 'bg-red-950 text-red-400 border border-red-500/40'
               }`}>
-                <Sparkles className="w-3 h-3" />
-                {activeDare.type === 'VICTORY' ? 'OVERWINNINGS-RECHT' : 'EXTRA BOETE OPDRACHT'}
+                {activeDare.isWildcard ? <Crown className="w-3.5 h-3.5" /> : <Sparkles className="w-3 h-3" />}
+                {activeDare.isWildcard ? '⚡ ZELDSAME WILDCARD' : activeDare.type === 'VICTORY' ? 'OVERWINNINGS-RECHT' : 'EXTRA BOETE OPDRACHT'}
               </span>
 
               <button 
@@ -689,8 +726,10 @@ export default function SlokkenVeilingEngine() {
               </button>
             </div>
 
-            <h3 className="text-lg font-black text-white">{activeDare.title}</h3>
-            <p className="text-xs text-amber-200 mt-1 leading-relaxed font-medium">
+            <h3 className={`text-lg font-black ${activeDare.isWildcard ? 'text-amber-300 text-xl' : 'text-white'}`}>
+              {activeDare.title}
+            </h3>
+            <p className={`text-xs mt-1 leading-relaxed font-medium ${activeDare.isWildcard ? 'text-amber-100 font-bold' : 'text-amber-200'}`}>
               {activeDare.description}
             </p>
           </div>
