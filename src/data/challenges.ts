@@ -14,6 +14,59 @@ export interface Dare {
   isWildcard?: boolean;
 }
 
+export interface WheelSegment {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+export const WHEEL_SEGMENTS: WheelSegment[] = [
+  {
+    id: "wheel-1",
+    title: "💥 JACKPOT!",
+    description: "De draaier is veilig! Iedereen behalve de draaier neemt direct 2 strafslokken!",
+    color: "from-amber-500 to-orange-500",
+    icon: "🎰"
+  },
+  {
+    id: "wheel-2",
+    title: "🚰 HYDRATIE CHECK",
+    description: "Kampvuur regel: Iedereen neemt verplicht een flinke slok water!",
+    color: "from-blue-500 to-cyan-500",
+    icon: "🚰"
+  },
+  {
+    id: "wheel-3",
+    title: "⚡ DUBBELE INZET",
+    description: "Biedingen & strafslokken in de VOLGENDE veiling tellen DUBBEL!",
+    color: "from-purple-500 to-pink-500",
+    icon: "⚡"
+  },
+  {
+    id: "wheel-4",
+    title: "🎲 SHOT ROULETTE",
+    description: "Het rad kiest 1 willekeurige speler die zijn/haar glas in 1x leeg moet adje!",
+    color: "from-red-600 to-rose-600",
+    icon: "🍾"
+  },
+  {
+    id: "wheel-5",
+    title: "🪑 STOEL-RUIL",
+    description: "Iedereen staat op en schuift 1 plek door naar rechts rond het kampvuur!",
+    color: "from-emerald-500 to-green-600",
+    icon: "🪑"
+  },
+  {
+    id: "wheel-6",
+    title: "🎯 SLOKKEN-SWAP",
+    description: "De speler met de minste slokken geeft 2 slokken aan de speler met de meeste slokken!",
+    color: "from-yellow-500 to-amber-600",
+    icon: "🔄"
+  }
+];
+
 export const WILDCARD_VICTORY_DARE: Dare = {
   id: "wild-vic",
   type: "WILDCARD",
@@ -161,7 +214,7 @@ export const CATEGORIES: CategoryChallenge[] = [
     id: "cat-7",
     title: "🤬 Scheldwoorden & Straattaal",
     categoryName: "scheldwoorden",
-    description: "Hoeveel scheldwoorden of straattaalwoorden kun jij opnoemen in 10 seconden?",
+    description: "Hoeveel scheldwoorden en straattaalwoorden kun jij opnoemen in 10 seconden?",
     defaultTimeSeconds: 10
   },
   {
