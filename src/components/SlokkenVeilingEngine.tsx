@@ -40,7 +40,10 @@ import {
   Disc,
   Shield,
   PlusCircle,
-  Sparkle
+  Sparkle,
+  ShieldCheck,
+  FlameKindling,
+  Gem
 } from 'lucide-react';
 
 interface Player {
@@ -91,6 +94,10 @@ export default function SlokkenVeilingEngine() {
   // Never Have I Ever State
   const [nhieIndex, setNhieIndex] = useState(0);
   const [nhieQuestions, setNhieQuestions] = useState<NeverHaveIEverCard[]>([]);
+
+  // Extra Bonus Challenge / Double Reward State
+  const [isRedeemed, setIsRedeemed] = useState(false);
+  const [isDoubleRewarded, setIsDoubleRewarded] = useState(false);
 
   // Wheel of Fortune State
   const [isSpinning, setIsSpinning] = useState(false);
@@ -207,6 +214,8 @@ export default function SlokkenVeilingEngine() {
     setPassedPlayerIds([]);
     setChallengerId(null);
     setActiveDare(null);
+    setIsRedeemed(false);
+    setIsDoubleRewarded(false);
     
     const startingPlayerIdx = roundIndex % players.length;
     setActivePlayerIndex(startingPlayerIdx);
@@ -371,6 +380,39 @@ export default function SlokkenVeilingEngine() {
         sounds.playBid();
       }
     }
+  };
+
+  // Redeem Yourself Mechanic (Loss Recovery)
+  const handleRedeemSelf = () => {
+    const bidder = players.find(p => p.id === highestBidderId);
+    if (!bidder || isRedeemed) return;
+
+    sounds.playSuccess();
+    confetti({ particleCount: 100, spread: 70 });
+    setIsRedeemed(true);
+
+    setResolutionData(prev => prev ? {
+      ...prev,
+      headline: `🔥 ${bidder.name} HEEFT ZICHZELF HERSTELD!`,
+      subtext: `Opdracht met succes voltooid! De slokken-straf is geannuleerd!`,
+      drinkers: []
+    } : null);
+  };
+
+  // Double Reward Mechanic (Winner Bonus Challenge)
+  const handleDoubleReward = () => {
+    const bidder = players.find(p => p.id === highestBidderId);
+    if (!bidder || isDoubleRewarded) return;
+
+    sounds.playSuccess();
+    confetti({ particleCount: 140, spread: 80 });
+    setIsDoubleRewarded(true);
+
+    setResolutionData(prev => prev ? {
+      ...prev,
+      headline: `💎 DUBBELE BELONING GEPAKT BY ${bidder.name.toUpperCase()}!`,
+      subtext: `Extra challenge voltooid! Je mag direct 4 BONUS SLOKKEN naar keuze uitdelen rond het vuur!`,
+    } : null);
   };
 
   // Trigger Never Have I Ever mode
@@ -1235,9 +1277,13 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: RESOLUTION PHASE WITH QUIZMASTER TIMER
+  // RENDER: RESOLUTION PHASE WITH REDEEM & DOUBLE REWARD
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
+    const bidder = players.find(p => p.id === highestBidderId);
+    const hasFailed = resolutionData.drinkers.length > 0 && bidder && resolutionData.drinkers.some(d => d.name === bidder.name);
+    const hasWon = !hasFailed && bidder;
+
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -1290,7 +1336,6 @@ export default function SlokkenVeilingEngine() {
               {activeDare.description}
             </p>
 
-            {/* Quizmaster 60s Timer Control */}
             {activeDare.isQuizmaster && (
               <div className="mt-3 pt-2 border-t border-amber-400/30">
                 <button 
@@ -1304,6 +1349,44 @@ export default function SlokkenVeilingEngine() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* DOUBLE REWARD / DUBBEL OF NIETS (WINNER EXTRA CHALLENGE) */}
+        {hasWon && !isDoubleRewarded && (
+          <div className="my-2 z-10 bg-gradient-to-r from-emerald-950 to-amber-950 border border-emerald-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
+              <Gem className="w-4 h-4 animate-bounce text-emerald-400" />
+              💎 DUBBEL OF NIETS (EXTRA BELONINGS-CHALLENGE)!
+            </div>
+            <p className="text-xs text-slate-200">
+              Voer een extra maffe uitdaging uit en pak direct <b>4 EXTRA BONUS SLOKKEN</b> om uit te delen!
+            </p>
+            <button 
+              onClick={handleDoubleReward}
+              className="w-full bg-gradient-to-r from-emerald-400 to-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 shadow-lg"
+            >
+              <Sparkles className="w-4 h-4 fill-current" /> EXTRA CHALLENGE VOLTOOID! (PAK 4 BONUS SLOKKEN)
+            </button>
+          </div>
+        )}
+
+        {/* REDEEM YOURSELF MECHANIC BUTTON (LOSER RECOVERY) */}
+        {hasFailed && !isRedeemed && (
+          <div className="my-2 z-10 bg-gradient-to-r from-orange-950 to-amber-950 border border-orange-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-black text-orange-400 uppercase tracking-wider">
+              <FlameKindling className="w-4 h-4 animate-bounce text-orange-400" />
+              HERSTEL-KANS (REDEEM YOURSELF)!
+            </div>
+            <p className="text-xs text-slate-200">
+              Voer de boete-opdracht uit om je slokken-straf <b>HELEMAAL TE KANCELEN!</b>
+            </p>
+            <button 
+              onClick={handleRedeemSelf}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 shadow-lg"
+            >
+              <ShieldCheck className="w-4 h-4" /> OPDRACHT VOLTOOID! (SCHELD SLOKKEN KROON)
+            </button>
           </div>
         )}
 
@@ -1394,7 +1477,7 @@ export default function SlokkenVeilingEngine() {
 
       <div className="my-2 z-10 space-y-2 max-h-44 overflow-y-auto">
         {[...players].sort((a, b) => b.sipsDrunk - a.sipsDrunk).map((p, idx) => (
-          <div key={p.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+          <div key={p.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center ${
                 idx === 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'
