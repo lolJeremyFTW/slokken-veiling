@@ -10,10 +10,12 @@ import {
   WILDCARD_PENALTY_DARE, 
   WHEEL_SEGMENTS,
   NEVER_HAVE_I_EVER_QUESTIONS,
+  GROUP_VOTE_QUESTIONS,
   CategoryChallenge, 
   Dare,
   WheelSegment,
-  NeverHaveIEverCard
+  NeverHaveIEverCard,
+  GroupVoteCard
 } from '../data/challenges';
 import { sounds } from '../utils/soundEffects';
 import { 
@@ -43,7 +45,9 @@ import {
   Sparkle,
   ShieldCheck,
   FlameKindling,
-  Gem
+  Gem,
+  Bomb,
+  Users
 } from 'lucide-react';
 
 interface Player {
@@ -56,7 +60,7 @@ interface Player {
   highestBidPlaced: number;
 }
 
-type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'HORSE_RACE' | 'CUSTOM_CATEGORY_CREATOR' | 'NEVER_HAVE_I_EVER' | 'RESOLUTION' | 'STATS';
+type GamePhase = 'SETUP' | 'BIDDING' | 'TIMED_CHALLENGE' | 'WHEEL_BONUS' | 'HORSE_RACE' | 'CUSTOM_CATEGORY_CREATOR' | 'NEVER_HAVE_I_EVER' | 'GROUP_VOTE' | 'SLOK_BOM' | 'RESOLUTION' | 'STATS';
 
 interface Horse {
   id: number;
@@ -90,6 +94,15 @@ export default function SlokkenVeilingEngine() {
   const [activePlayerIndex, setActivePlayerIndex] = useState<number>(0);
   const [passedPlayerIds, setPassedPlayerIds] = useState<string[]>([]);
   const [challengerId, setChallengerId] = useState<string | null>(null);
+
+  // Group Vote State
+  const [currentVoteCard, setCurrentVoteCard] = useState<GroupVoteCard | null>(null);
+
+  // Slok-Bom State
+  const [bombHolderIndex, setBombHolderIndex] = useState(0);
+  const [bombTimer, setBombTimer] = useState<number>(15);
+  const [isBombExploded, setIsBombExploded] = useState(false);
+  const bombIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Never Have I Ever State
   const [nhieIndex, setNhieIndex] = useState(0);
@@ -201,10 +214,14 @@ export default function SlokkenVeilingEngine() {
     triggerHaptic();
   };
 
-  // Start a new Bidding Round
+  // Start a new Bidding Round or trigger special event automatically!
   const startRound = (card: CategoryChallenge, roundIndex: number) => {
-    if (roundIndex > 0 && roundIndex % 5 === 0 && phase !== 'WHEEL_BONUS') {
-      triggerWheelBonus();
+    if (card.isSpecialEvent) {
+      if (card.isSpecialEvent === 'HORSE_RACE') triggerHorseRace();
+      else if (card.isSpecialEvent === 'WHEEL_BONUS') triggerWheelBonus();
+      else if (card.isSpecialEvent === 'NEVER_HAVE_I_EVER') startNeverHaveIEver();
+      else if (card.isSpecialEvent === 'GROUP_VOTE') startGroupVote();
+      else if (card.isSpecialEvent === 'SLOK_BOM') startSlokBom();
       return;
     }
 
@@ -355,6 +372,46 @@ export default function SlokkenVeilingEngine() {
   const toggleTimer = () => {
     setIsTimerRunning(!isTimerRunning);
     sounds.playBid();
+  };
+
+  // Group Vote Start
+  const startGroupVote = () => {
+    const randomQuestion = GROUP_VOTE_QUESTIONS[Math.floor(Math.random() * GROUP_VOTE_QUESTIONS.length)];
+    setCurrentVoteCard(randomQuestion);
+    setPhase('GROUP_VOTE');
+    sounds.playGavel();
+    confetti({ particleCount: 90, spread: 70 });
+  };
+
+  // Slok-Bom Start (Hot Potato)
+  const startSlokBom = () => {
+    const randomSeconds = Math.floor(Math.random() * 16) + 12; // 12-28 seconds secret fuse
+    setBombTimer(randomSeconds);
+    setBombHolderIndex(0);
+    setIsBombExploded(false);
+    setPhase('SLOK_BOM');
+    sounds.playChallenge();
+
+    bombIntervalRef.current = setInterval(() => {
+      setBombTimer(prev => {
+        sounds.playTick();
+        if (prev <= 1) {
+          clearInterval(bombIntervalRef.current as NodeJS.Timeout);
+          setIsBombExploded(true);
+          sounds.playFail();
+          confetti({ particleCount: 150, spread: 90 });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const passBombNextPlayer = () => {
+    if (isBombExploded) return;
+    sounds.playBid();
+    triggerHaptic();
+    setBombHolderIndex((bombHolderIndex + 1) % players.length);
   };
 
   // Draw random dare with 10% WILDCARD chance
@@ -768,38 +825,30 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: BIDDING PHASE
+  // RENDER: CLEAN BIDDING PHASE (NO HEADER CLUTTER)
   // ==========================================
   if (phase === 'BIDDING') {
     const highestBidder = players.find(p => p.id === highestBidderId);
 
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
-        <div className="flex items-center justify-between z-10 pt-2">
+        <div className="flex items-center justify-between z-10 pt-2 border-b border-slate-900 pb-2">
           <span className="text-xs font-bold text-slate-400">
-            Categorie {currentCardIndex + 1} / {deck.length}
+            Ronde {currentCardIndex + 1} / {deck.length}
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button 
-              onClick={startNeverHaveIEver} 
-              className="p-2 bg-orange-950 text-orange-400 rounded-lg border border-orange-800 text-xs font-bold flex items-center gap-1"
-              title="Ik Heb Nog Nooit..."
+              onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
+              className="px-2.5 py-1 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800 text-[11px] font-bold flex items-center gap-1"
             >
-              🍻 Ik Heb Nog Nooit
+              <PlusCircle className="w-3.5 h-3.5" /> + Categorie
             </button>
             <button 
-              onClick={triggerHorseRace} 
-              className="p-2 bg-amber-950 text-amber-400 rounded-lg border border-amber-800"
-              title="Paardenrace Minigame"
+              onClick={() => setPhase('STATS')} 
+              className="p-1.5 bg-slate-900 text-amber-400 rounded-lg border border-slate-800"
+              title="Scorebord"
             >
-              🐎
-            </button>
-            <button 
-              onClick={triggerWheelBonus} 
-              className="p-2 bg-purple-950 text-purple-400 rounded-lg border border-purple-800"
-              title="Rad van Slokken"
-            >
-              <Disc className="w-4 h-4" />
+              <Trophy className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -933,6 +982,98 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
+  // RENDER: GROUP VOTE (STEM OP DE SJAAK)
+  // ==========================================
+  if (phase === 'GROUP_VOTE' && currentVoteCard) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-400 text-xs font-bold mb-1">
+            <Users className="w-4 h-4" /> VERRASSINGS-EVENT: GROEPS-STEMMING
+          </div>
+          <h2 className="text-3xl font-black text-amber-300">STEM OP DE SJAAK!</h2>
+        </div>
+
+        <div className="my-auto z-10 bg-gradient-to-b from-purple-950/60 via-slate-900 to-slate-950 border border-purple-500/50 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+          <div className="text-2xl font-black text-white leading-relaxed">
+            &quot;{currentVoteCard.question}&quot;
+          </div>
+          <div className="text-sm font-bold text-amber-400 animate-pulse">
+            Iedereen telt af: 3... 2... 1... Wijs TEGELIJK iemand aan!
+          </div>
+          <p className="text-xs text-slate-300">
+            De persoon met de meeste vingers op zich gericht drinkt <b>2 STRAFSLOKKEN!</b>
+          </p>
+        </div>
+
+        <div className="pb-6 z-10">
+          <button 
+            onClick={nextCard}
+            className="w-full bg-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl active:scale-95"
+          >
+            STEMMING VOLTOOID → SPEL HERVATTEN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: SLOK-BOM (HOT POTATO)
+  // ==========================================
+  if (phase === 'SLOK_BOM') {
+    const holder = players[bombHolderIndex] || players[0];
+
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500/20 border border-red-500/40 rounded-full text-red-400 text-xs font-bold mb-1 animate-pulse">
+            <Bomb className="w-4 h-4" /> VERRASSINGS-MINIGAME
+          </div>
+          <h2 className="text-3xl font-black text-red-400">DE TIKKENDE SLOK-BOM!</h2>
+          <p className="text-slate-300 text-xs mt-1">Geef de telefoon rond het vuur & noem 1 item!</p>
+        </div>
+
+        <div className="my-auto text-center z-10 space-y-4">
+          {!isBombExploded ? (
+            <div className="bg-slate-900 border border-red-500/50 p-6 rounded-2xl space-y-3 shadow-2xl">
+              <div className="text-xs font-bold text-slate-400 uppercase">Telefoon vasthouder:</div>
+              <div className="text-3xl font-black text-amber-400 animate-bounce">{holder.name}</div>
+              <div className="text-5xl animate-pulse">💣</div>
+              <p className="text-xs text-slate-300">
+                Noem 1 item (bijv. biermerk/stad) en geef de telefoon DIRECT door!
+              </p>
+              <button 
+                onClick={passBombNextPlayer}
+                className="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-4 rounded-xl text-base shadow-xl animate-pulse"
+              >
+                PAS TELEFOON DOOR AAN VOLGENDE SPELER! ⏩
+              </button>
+            </div>
+          ) : (
+            <div className="bg-red-950/80 border border-red-500 p-6 rounded-2xl space-y-3 shadow-2xl animate-bounce">
+              <div className="text-5xl">💥 BOOM!</div>
+              <h3 className="text-2xl font-black text-white">DE BOM IS ONTPLOFT!</h3>
+              <div className="text-lg font-black text-amber-300">{holder.name} HOUDT DE BOM VAST!</div>
+              <p className="text-xs text-slate-200">Neem direct <b>3 STRAFSLOKKEN!</b></p>
+              <button 
+                onClick={nextCard}
+                className="w-full bg-amber-500 text-slate-950 font-black py-3.5 rounded-xl text-sm mt-2"
+              >
+                SPEL HERVATTEN
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="pb-4 z-10 text-center text-xs text-slate-500">
+          Tijd stopt op een willekeurig geheim moment!
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
   // RENDER: NEVER HAVE I EVER MODE
   // ==========================================
   if (phase === 'NEVER_HAVE_I_EVER') {
@@ -970,10 +1111,7 @@ export default function SlokkenVeilingEngine() {
             </button>
           ) : (
             <button 
-              onClick={() => {
-                setPhase('BIDDING');
-                sounds.playSuccess();
-              }}
+              onClick={nextCard}
               className="w-full bg-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl active:scale-95"
             >
               VEILING HERVATTEN
@@ -1125,13 +1263,10 @@ export default function SlokkenVeilingEngine() {
             </button>
           ) : (
             <button 
-              onClick={() => {
-                setPhase('BIDDING');
-                sounds.playBid();
-              }}
+              onClick={nextCard}
               className="w-full bg-amber-500 text-slate-950 font-black text-base py-4 rounded-2xl shadow-xl active:scale-95"
             >
-              SERIEUS SPEL HERVATTEN
+              SPEL HERVATTEN
             </button>
           )}
         </div>
@@ -1258,13 +1393,10 @@ export default function SlokkenVeilingEngine() {
               {selectedWheelSegment.description}
             </p>
             <button 
-              onClick={() => {
-                setPhase('BIDDING');
-                sounds.playBid();
-              }}
+              onClick={nextCard}
               className="mt-2 w-full bg-amber-500 text-slate-950 font-black py-3 rounded-xl text-sm"
             >
-              SERIEUS SPEL HERVATTEN
+              SPEL HERVATTEN
             </button>
           </div>
         ) : (
@@ -1277,7 +1409,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: RESOLUTION PHASE WITH REDEEM & DOUBLE REWARD
+  // RENDER: RESOLUTION PHASE
   // ==========================================
   if (phase === 'RESOLUTION' && resolutionData) {
     const bidder = players.find(p => p.id === highestBidderId);
@@ -1352,7 +1484,7 @@ export default function SlokkenVeilingEngine() {
           </div>
         )}
 
-        {/* DOUBLE REWARD / DUBBEL OF NIETS (WINNER EXTRA CHALLENGE) */}
+        {/* DOUBLE REWARD / DUBBEL OF NIETS */}
         {hasWon && !isDoubleRewarded && (
           <div className="my-2 z-10 bg-gradient-to-r from-emerald-950 to-amber-950 border border-emerald-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
@@ -1371,7 +1503,7 @@ export default function SlokkenVeilingEngine() {
           </div>
         )}
 
-        {/* REDEEM YOURSELF MECHANIC BUTTON (LOSER RECOVERY) */}
+        {/* REDEEM YOURSELF MECHANIC BUTTON */}
         {hasFailed && !isRedeemed && (
           <div className="my-2 z-10 bg-gradient-to-r from-orange-950 to-amber-950 border border-orange-500/50 p-3.5 rounded-2xl text-center shadow-xl space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-black text-orange-400 uppercase tracking-wider">

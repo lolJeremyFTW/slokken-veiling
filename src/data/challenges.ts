@@ -4,6 +4,7 @@ export interface CategoryChallenge {
   categoryName: string;
   description: string;
   defaultTimeSeconds: number;
+  isSpecialEvent?: 'HORSE_RACE' | 'WHEEL_BONUS' | 'NEVER_HAVE_I_EVER' | 'GROUP_VOTE' | 'SLOK_BOM';
 }
 
 export interface Dare {
@@ -19,6 +20,34 @@ export interface NeverHaveIEverCard {
   id: string;
   statement: string;
 }
+
+export interface GroupVoteCard {
+  id: string;
+  question: string;
+}
+
+export const GROUP_VOTE_QUESTIONS: GroupVoteCard[] = [
+  {
+    id: "gv-1",
+    question: "Wie van de groep zou het eerst verdwalen als we zonder GPS het bos in lopen?"
+  },
+  {
+    id: "gv-2",
+    question: "Wie van de groep is de grootste bluffer tijdens deze veiling?"
+  },
+  {
+    id: "gv-3",
+    question: "Wie van de groep heeft de neiging om als eerste in slaap te vallen bij het kampvuur?"
+  },
+  {
+    id: "gv-4",
+    question: "Wie van de groep maakt de meeste rommel in de tent of op de camping?"
+  },
+  {
+    id: "gv-5",
+    question: "Wie van de groep heeft vanavond de meeste slokken nodig om los te komen?"
+  }
+];
 
 export const NEVER_HAVE_I_EVER_QUESTIONS: NeverHaveIEverCard[] = [
   {
@@ -59,7 +88,7 @@ export const NEVER_HAVE_I_EVER_QUESTIONS: NeverHaveIEverCard[] = [
   },
   {
     id: "nhie-10",
-    statement: "Ik heb nog nooit een dronken appje of spraakbericht gestuurd waar ik de volgende ochtend spijt van had!"
+    statement: "Ik heb nog nooit een dronken appje of spraakbericht gestuurd waar ik de volgende ochattend spijt van had!"
   }
 ];
 
@@ -127,7 +156,7 @@ export const VICTORY_DARES: Dare[] = [
     id: "vic-7",
     type: "VICTORY",
     title: "📱 Melding Voorlezen",
-    description: "Wijs iemand aan die het laaste ontvangen berichtje op zijn/haar telefoon hardop moet voorlezen (of 3 slokken drinkt)!"
+    description: "Wijs iemand aan die het laaste ontvangen berichtje op zijn/haar telefoon hardop moet voorlezen (of 3 slokken drinkts)!"
   }
 ];
 
@@ -216,6 +245,46 @@ export const WHEEL_SEGMENTS = [
 ];
 
 export const CATEGORIES: CategoryChallenge[] = [
+  {
+    id: "cat-event-1",
+    title: "🐎 VERRASSINGS-EVENT: DE KAMPVUUR PAARDENRACE",
+    categoryName: "paardenrace",
+    description: "Verrassings-minigame! Zet slokken in op 1 van de 4 paarden en kijk wie er wint op het scherm!",
+    defaultTimeSeconds: 15,
+    isSpecialEvent: "HORSE_RACE"
+  },
+  {
+    id: "cat-event-2",
+    title: "🍻 VERRASSINGS-EVENT: KAMPVUUR BIECHT",
+    categoryName: "ik heb nog nooit",
+    description: "Verrassings-ronde! 5 rondes 'Ik heb nog nooit...'. Wie schuldig is drinkt 1 slok!",
+    defaultTimeSeconds: 15,
+    isSpecialEvent: "NEVER_HAVE_I_EVER"
+  },
+  {
+    id: "cat-event-3",
+    title: "🎡 VERRASSINGS-EVENT: RAD VAN SLOKKEN",
+    categoryName: "rad van slokken",
+    description: "Verrassings-ronde! Draai het Rad van Slokken voor een willekeurig groeps-event!",
+    defaultTimeSeconds: 15,
+    isSpecialEvent: "WHEEL_BONUS"
+  },
+  {
+    id: "cat-event-4",
+    title: "🎭 VERRASSINGS-EVENT: STEM OP DE SJAAK",
+    categoryName: "groeps-stemming",
+    description: "Verrassings-ronde! De groep krijgt een vraag en telt af 3..2..1.. Wijs tegelijk iemand aan! Meeste stemmen = 2 slokken!",
+    defaultTimeSeconds: 15,
+    isSpecialEvent: "GROUP_VOTE"
+  },
+  {
+    id: "cat-event-5",
+    title: "💣 VERRASSINGS-EVENT: DE TIKKENDE SLOK-BOM",
+    categoryName: "slok bom",
+    description: "Verrassings-minigame! Geef de telefoon rond het vuur en noem om de beurt 1 item in de categorie. Waar de bom ontploft drinkt 3 slokken!",
+    defaultTimeSeconds: 15,
+    isSpecialEvent: "SLOK_BOM"
+  },
   {
     id: "cat-qm",
     title: "👑 De Quizmaster Vragen",
