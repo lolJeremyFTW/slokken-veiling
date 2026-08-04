@@ -49,7 +49,9 @@ import {
   FlameKindling,
   Gem,
   Bomb,
-  Users
+  Users,
+  Scroll,
+  Flame as FlameIcon
 } from 'lucide-react';
 
 interface Player {
@@ -98,6 +100,8 @@ export default function SlokkenVeilingEngine() {
   const [deck, setDeck] = useState<CategoryChallenge[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isDoubleBidsActive, setIsDoubleBidsActive] = useState(false);
+  const [activeRules, setActiveRules] = useState<string[]>([]);
+  const [isAllInBid, setIsAllInBid] = useState(false);
   
   // Round Bidding State
   const [highestBidderId, setHighestBidderId] = useState<string | null>(null);
@@ -185,6 +189,12 @@ export default function SlokkenVeilingEngine() {
     triggerHaptic();
   };
 
+  const triggerProostCheers = () => {
+    sounds.playSuccess();
+    confetti({ particleCount: 80, spread: 60 });
+    triggerHaptic();
+  };
+
   // Add / Remove Player
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -221,6 +231,7 @@ export default function SlokkenVeilingEngine() {
     const shuffled = [...CATEGORIES].sort(() => Math.random() - 0.5);
     setDeck(shuffled);
     setCurrentCardIndex(0);
+    setActiveRules([]);
     startRound(shuffled[0], 0);
     sounds.playGavel();
     triggerHaptic();
@@ -246,6 +257,7 @@ export default function SlokkenVeilingEngine() {
     setActiveDonTask(null);
     setIsRedeemed(false);
     setIsDoubleRewarded(false);
+    setIsAllInBid(false);
     
     const startingPlayerIdx = roundIndex % players.length;
     setActivePlayerIndex(startingPlayerIdx);
@@ -264,12 +276,17 @@ export default function SlokkenVeilingEngine() {
     return nextIdx;
   };
 
-  const handlePlaceBid = (amount: number) => {
+  const handlePlaceBid = (amount: number, isAllIn: boolean = false) => {
     const newBid = highestBid + amount;
 
     sounds.playBid();
     triggerHaptic();
     
+    if (isAllIn) {
+      setIsAllInBid(true);
+      sounds.playChallenge();
+    }
+
     setHighestBid(newBid);
     setHighestBidderId(activePlayer.id);
 
@@ -519,7 +536,7 @@ export default function SlokkenVeilingEngine() {
     if (!bidder) return;
 
     const isWildcardRoll = Math.random() < 0.10;
-    let sipsMultiplier = isDoubleBidsActive ? 2 : 1;
+    let sipsMultiplier = isDoubleBidsActive ? 2 : isAllInBid ? 3 : 1;
 
     if (success) {
       if (isWildcardRoll) {
@@ -535,7 +552,7 @@ export default function SlokkenVeilingEngine() {
       
       const sipsToDrink = highestBid * sipsMultiplier;
       setResolutionData({
-        headline: `🔥 ${bidder.name} HEEFT HET BEWEZEN!`,
+        headline: isAllInBid ? `🔥 ALL-IN BLUF BEWEZEN BY ${bidder.name.toUpperCase()}!` : `🔥 ${bidder.name} HEEFT HET BEWEZEN!`,
         subtext: `${bidder.name} noemde ruim ${highestBid} ${currentCard.categoryName} binnen de tijd!`,
         actionDetails: challenger ? `${challenger.name} dacht dat je het niet kon en verliest!` : `Klasse prestatie!`,
         drinkers: challenger ? [{ name: challenger.name, sips: sipsToDrink, reason: `Verkeerd uitgedaagd (${sipsToDrink} slokken)` }] : []
@@ -554,7 +571,7 @@ export default function SlokkenVeilingEngine() {
 
       const sipsToDrink = highestBid * 2 * sipsMultiplier;
       setResolutionData({
-        headline: `❌ ${bidder.name} HEEFT GEFAALD!`,
+        headline: isAllInBid ? `💥 ALL-IN BLUF KEIHARD GEFAALD!` : `❌ ${bidder.name} HEEFT GEFAALD!`,
         subtext: `${bidder.name} haalde de ${highestBid} ${currentCard.categoryName} NIET binnen de tijd!`,
         actionDetails: `Gefaald! Boete: Dubbele slokken!`,
         drinkers: [{ name: bidder.name, sips: sipsToDrink, reason: `Gefaald in bod (${sipsToDrink} slokken)` }]
@@ -564,6 +581,7 @@ export default function SlokkenVeilingEngine() {
     }
 
     setIsDoubleBidsActive(false);
+    setIsAllInBid(false);
     setPhase('RESOLUTION');
   };
 
@@ -855,7 +873,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: CLEAN BIDDING PHASE
+  // RENDER: CLEAN BIDDING PHASE WITH ALL-IN BLUF & PROOST BUTTON
   // ==========================================
   if (phase === 'BIDDING') {
     const highestBidder = players.find(p => p.id === highestBidderId);
@@ -867,6 +885,13 @@ export default function SlokkenVeilingEngine() {
             Ronde {currentCardIndex + 1} / {deck.length}
           </span>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={triggerProostCheers}
+              className="px-2.5 py-1 bg-amber-500 text-slate-950 rounded-lg font-black text-xs flex items-center gap-1 active:scale-95 shadow"
+              title="Proost op het Kampvuur!"
+            >
+              🍻 PROOST!
+            </button>
             <button 
               onClick={() => setPhase('CUSTOM_CATEGORY_CREATOR')}
               className="px-2.5 py-1 bg-emerald-950 text-emerald-400 rounded-lg border border-emerald-800 text-[11px] font-bold flex items-center gap-1"
@@ -920,6 +945,7 @@ export default function SlokkenVeilingEngine() {
               </div>
               <div className="text-sm font-bold text-slate-300 mt-1">
                 door <span className="text-orange-400 underline decoration-amber-400 decoration-2">{highestBidder.name}</span>
+                {isAllInBid && <span className="ml-2 text-red-500 font-black text-xs uppercase animate-ping">🔥 ALL-IN!</span>}
               </div>
             </div>
           ) : (
@@ -937,12 +963,12 @@ export default function SlokkenVeilingEngine() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             <button 
               onClick={() => handlePlaceBid(1)}
               className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
             >
-              +{1}
+              +1
             </button>
             <button 
               onClick={() => handlePlaceBid(2)}
@@ -955,6 +981,14 @@ export default function SlokkenVeilingEngine() {
               className="bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black py-3 rounded-xl transition text-center shadow-md text-base"
             >
               +3
+            </button>
+            <button 
+              onClick={() => handlePlaceBid(5, true)}
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white font-black py-3 rounded-xl transition text-center shadow-md text-xs border border-red-400/50 flex flex-col items-center justify-center"
+              title="3x Slokken Risico!"
+            >
+              <span>+5</span>
+              <span className="text-[9px] text-red-200">ALL-IN</span>
             </button>
           </div>
 
