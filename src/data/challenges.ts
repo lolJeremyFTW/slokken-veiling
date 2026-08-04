@@ -6,6 +6,97 @@ export interface CategoryChallenge {
   defaultTimeSeconds: number;
 }
 
+export interface Dare {
+  id: string;
+  type: 'VICTORY' | 'PENALTY';
+  title: string;
+  description: string;
+}
+
+export const VICTORY_DARES: Dare[] = [
+  {
+    id: "vic-1",
+    type: "VICTORY",
+    title: "👑 Koning van het Kampvuur",
+    description: "De winnaar mag bepalen WIE van de medespelers 10 seconden lang een gekke overwinningsdans rond het vuur moet doen!"
+  },
+  {
+    id: "vic-2",
+    title: "🎯 De Barmhartige Samaritaan",
+    description: "Wijs een medespeler aan die jouw drankje voor de rest van de avond moet inschenken/halen!"
+  },
+  {
+    id: "vic-3",
+    title: "🎭 Accent Verplicht",
+    description: "Wijs iemand aan die de komende 3 rondes met een zwaar Frans, Vlaams of Duits accent MOET praten."
+  },
+  {
+    id: "vic-4",
+    title: "🍾 Dubbele Genade",
+    description: "De verliezer (die dacht dat jij het niet kon) moet BINNEN 10 seconden zijn glas adje/bijdrinken!"
+  },
+  {
+    id: "vic-5",
+    title: "📸 De Overwinnaars-Selfie",
+    description: "Iedereen behalve jij moet een gekke smoel trekken op een groepsfoto die jij nu maakt!"
+  },
+  {
+    id: "vic-6",
+    title: "🤫 De Stilte Straf",
+    description: "Wijs een medespeler aan die 2 rondes lang helemaal NIET meer mag praten. Zegt hij toch wat? 2 slokken per woord!"
+  },
+  {
+    id: "vic-7",
+    title: "👑 De Koninklijke Stoel",
+    description: "Iemand moet zijn/haar stoel voor jou afstaan of je 1 minuut lang als een koning bedienen!"
+  }
+];
+
+export const PENALTY_DARES: Dare[] = [
+  {
+    id: "pen-1",
+    type: "PENALTY",
+    title: "🤡 Groepsapp Schande",
+    description: "Stuur een maffe selfie met gekke smoel zonder enige context naar je vrienden- of familie-groepsapp!"
+  },
+  {
+    id: "pen-2",
+    type: "PENALTY",
+    title: "🧊 Koud Water / IJsblokje",
+    description: "Laat de uitdager een koud ijsblokje of een scheutje ijskoud water achter in je nek of shirt glijden!"
+  },
+  {
+    id: "pen-3",
+    type: "PENALTY",
+    title: "🎤 Kampvuur Serenade",
+    description: "Zing de eerste 4 regels van een bekend kampvuurnummer of kinderliedje keihard voor de groep!"
+  },
+  {
+    id: "pen-4",
+    type: "PENALTY",
+    title: "🌶️ De Scherpe Happer",
+    description: "Eet een lepel mosterd, mayo, sambal of citroensap zonder te trekken met je gezicht!"
+  },
+  {
+    id: "pen-5",
+    type: "PENALTY",
+    title: "🐸 Kikkersprongen",
+    description: "Doe 5 kikkersprongen rond het kampvuur terwijl je hardop 'KWAAK' roept bij elke sprong!"
+  },
+  {
+    id: "pen-6",
+    type: "PENALTY",
+    title: "💇‍♂️ Maffiseer je Kapsel",
+    description: "De uitdager mag je haar voor de rest van de avond helemaal maffiseren met water/gel!"
+  },
+  {
+    id: "pen-7",
+    type: "PENALTY",
+    title: "📱 Engelse Telefoon",
+    description: "Zet de taal van je mobiel tot het einde van het spel op het Engels (of Duits)!"
+  }
+];
+
 export const CATEGORIES: CategoryChallenge[] = [
   {
     id: "cat-1",
