@@ -70,6 +70,15 @@ interface Horse {
   progress: number;
 }
 
+const WHEEL_COLORS = [
+  '#f59e0b', // Amber
+  '#ec4899', // Pink
+  '#8b5cf6', // Purple
+  '#ef4444', // Red
+  '#10b981', // Emerald
+  '#3b82f6', // Blue
+];
+
 export default function SlokkenVeilingEngine() {
   // Game Configuration & Players
   const [players, setPlayers] = useState<Player[]>([
@@ -385,7 +394,7 @@ export default function SlokkenVeilingEngine() {
 
   // Slok-Bom Start (Hot Potato)
   const startSlokBom = () => {
-    const randomSeconds = Math.floor(Math.random() * 16) + 12; // 12-28 seconds secret fuse
+    const randomSeconds = Math.floor(Math.random() * 16) + 12;
     setBombTimer(randomSeconds);
     setBombHolderIndex(0);
     setIsBombExploded(false);
@@ -562,9 +571,11 @@ export default function SlokkenVeilingEngine() {
     const selectedIdx = Math.floor(Math.random() * WHEEL_SEGMENTS.length);
     const targetSegment = WHEEL_SEGMENTS[selectedIdx];
 
-    const segmentAngle = 360 / WHEEL_SEGMENTS.length;
-    const extraRounds = 5 * 360;
-    const finalRotation = wheelRotation + extraRounds + (selectedIdx * segmentAngle);
+    // Align segment to top indicator (pointer is at top: 270 deg or 90 deg depending on SVG)
+    const sliceAngle = 360 / WHEEL_SEGMENTS.length;
+    const targetAngle = 360 - (selectedIdx * sliceAngle) - (sliceAngle / 2);
+    const extraSpins = 5 * 360;
+    const finalRotation = wheelRotation + extraSpins + (targetAngle - (wheelRotation % 360));
 
     setWheelRotation(finalRotation);
 
@@ -825,7 +836,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: CLEAN BIDDING PHASE (NO HEADER CLUTTER)
+  // RENDER: CLEAN BIDDING PHASE
   // ==========================================
   if (phase === 'BIDDING') {
     const highestBidder = players.find(p => p.id === highestBidderId);
@@ -982,7 +993,117 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: GROUP VOTE (STEM OP DE SJAAK)
+  // RENDER: BEAUTIFUL SVG WHEEL OF FORTUNE
+  // ==========================================
+  if (phase === 'WHEEL_BONUS') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
+        <div className="pt-4 text-center z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-400 text-xs font-bold mb-1 animate-pulse">
+            <Disc className="w-4 h-4" />
+            VERRASSINGS-RONDE
+          </div>
+          <h2 className="text-3xl font-black text-amber-300">HET RAD VAN SLOKKEN</h2>
+          <p className="text-slate-300 text-xs mt-1">Draai voor willekeurige groeps-events & cadeaus!</p>
+        </div>
+
+        {/* Clean SVG Conical Segment Wheel */}
+        <div className="my-auto z-10 text-center relative flex flex-col items-center justify-center">
+          <div className="relative w-72 h-72 flex items-center justify-center drop-shadow-2xl">
+            {/* Top Pointer Arrow */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+              <div className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-amber-400 drop-shadow-lg" />
+            </div>
+
+            {/* Rotating Wheel Circle */}
+            <div 
+              className="w-full h-full rounded-full transition-transform duration-[3000ms] ease-out shadow-2xl border-4 border-amber-400/80 overflow-hidden"
+              style={{ transform: `rotate(${wheelRotation}deg)` }}
+            >
+              <svg viewBox="0 0 240 240" className="w-full h-full">
+                {WHEEL_SEGMENTS.map((seg, idx) => {
+                  const sliceAngle = 360 / WHEEL_SEGMENTS.length;
+                  const startAngle = (idx * sliceAngle) * (Math.PI / 180);
+                  const endAngle = ((idx + 1) * sliceAngle) * (Math.PI / 180);
+                  const midAngle = ((idx + 0.5) * sliceAngle) * (Math.PI / 180);
+
+                  const x1 = 120 + 120 * Math.cos(startAngle);
+                  const y1 = 120 + 120 * Math.sin(startAngle);
+                  const x2 = 120 + 120 * Math.cos(endAngle);
+                  const y2 = 120 + 120 * Math.sin(endAngle);
+
+                  // Radial text coordinates
+                  const textX = 120 + 72 * Math.cos(midAngle);
+                  const textY = 120 + 72 * Math.sin(midAngle);
+
+                  const pathData = `M 120 120 L ${x1} ${y1} A 120 120 0 0 1 ${x2} ${y2} Z`;
+
+                  return (
+                    <g key={seg.id}>
+                      <path d={pathData} fill={WHEEL_COLORS[idx % WHEEL_COLORS.length]} stroke="#020617" strokeWidth="2" />
+                      <g transform={`translate(${textX}, ${textY}) rotate(${(idx + 0.5) * sliceAngle + 90})`}>
+                        <text 
+                          x="0" 
+                          y="0" 
+                          fill="#ffffff" 
+                          fontSize="10" 
+                          fontWeight="900" 
+                          textAnchor="middle" 
+                          dominantBaseline="middle"
+                          style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.9)' }}
+                        >
+                          {seg.icon} {seg.title}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })}
+                {/* Center Pin */}
+                <circle cx="120" cy="120" r="22" fill="#020617" stroke="#f59e0b" strokeWidth="4" />
+                <circle cx="120" cy="120" r="10" fill="#f59e0b" />
+              </svg>
+            </div>
+          </div>
+
+          <button 
+            onClick={spinWheel}
+            disabled={isSpinning}
+            className={`mt-6 px-8 py-4 rounded-2xl font-black text-lg transition active:scale-95 shadow-xl ${
+              isSpinning 
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-purple-500 to-amber-500 text-slate-950 hover:from-purple-600 hover:to-amber-600'
+            }`}
+          >
+            {isSpinning ? 'BEZIG MET DRAAIEN...' : '🎲 DRAAI HET RAD!'}
+          </button>
+        </div>
+
+        {selectedWheelSegment ? (
+          <div className="mb-6 z-10 bg-slate-900 border border-amber-500/50 p-4 rounded-2xl text-center space-y-2 shadow-2xl animate-fade-in">
+            <div className="text-2xl font-black text-amber-300">
+              {selectedWheelSegment.icon} {selectedWheelSegment.title}
+            </div>
+            <p className="text-xs text-slate-200 font-medium">
+              {selectedWheelSegment.description}
+            </p>
+            <button 
+              onClick={nextCard}
+              className="mt-2 w-full bg-amber-500 text-slate-950 font-black py-3 rounded-xl text-sm"
+            >
+              SPEL HERVATTEN
+            </button>
+          </div>
+        ) : (
+          <div className="pb-6 z-10 text-center text-xs text-slate-500">
+            Druk op de knop om het rad te laten spinnen!
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: GROUP VOTE
   // ==========================================
   if (phase === 'GROUP_VOTE' && currentVoteCard) {
     return (
@@ -1019,7 +1140,7 @@ export default function SlokkenVeilingEngine() {
   }
 
   // ==========================================
-  // RENDER: SLOK-BOM (HOT POTATO)
+  // RENDER: SLOK-BOM
   // ==========================================
   if (phase === 'SLOK_BOM') {
     const holder = players[bombHolderIndex] || players[0];
@@ -1328,82 +1449,6 @@ export default function SlokkenVeilingEngine() {
             Annuleren
           </button>
         </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // RENDER: WHEEL OF FORTUNE BONUS PHASE
-  // ==========================================
-  if (phase === 'WHEEL_BONUS') {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-hidden">
-        <div className="pt-4 text-center z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-400 text-xs font-bold mb-1 animate-pulse">
-            <Disc className="w-4 h-4" />
-            BONUS RONDE
-          </div>
-          <h2 className="text-3xl font-black text-amber-300">HET RAD VAN SLOKKEN</h2>
-          <p className="text-slate-300 text-xs mt-1">Draai voor willekeurige groeps-events & cadeaus!</p>
-        </div>
-
-        <div className="my-auto z-10 text-center relative flex flex-col items-center justify-center">
-          <div className="w-64 h-64 relative flex items-center justify-center rounded-full border-4 border-amber-400/80 shadow-2xl bg-slate-900 overflow-hidden">
-            <div 
-              className="w-full h-full rounded-full transition-transform duration-[3000ms] ease-out flex items-center justify-center"
-              style={{ transform: `rotate(${wheelRotation}deg)` }}
-            >
-              {WHEEL_SEGMENTS.map((seg, idx) => (
-                <div 
-                  key={seg.id}
-                  className="absolute w-full text-center text-xs font-black text-white"
-                  style={{ transform: `rotate(${(360 / WHEEL_SEGMENTS.length) * idx}deg)` }}
-                >
-                  <span className="bg-slate-950/80 px-2 py-1 rounded border border-amber-400/40 inline-block shadow">
-                    {seg.icon} {seg.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
-              <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-amber-400 drop-shadow-md" />
-            </div>
-          </div>
-
-          <button 
-            onClick={spinWheel}
-            disabled={isSpinning}
-            className={`mt-6 px-8 py-4 rounded-2xl font-black text-lg transition active:scale-95 shadow-xl ${
-              isSpinning 
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-purple-500 to-amber-500 text-slate-950 hover:from-purple-600 hover:to-amber-600'
-            }`}
-          >
-            {isSpinning ? 'BEZIG MET DRAAIEN...' : '🎲 DRAAI HET RAD!'}
-          </button>
-        </div>
-
-        {selectedWheelSegment ? (
-          <div className="mb-6 z-10 bg-slate-900 border border-amber-500/50 p-4 rounded-2xl text-center space-y-2 shadow-2xl animate-fade-in">
-            <div className="text-2xl font-black text-amber-300">
-              {selectedWheelSegment.icon} {selectedWheelSegment.title}
-            </div>
-            <p className="text-xs text-slate-200 font-medium">
-              {selectedWheelSegment.description}
-            </p>
-            <button 
-              onClick={nextCard}
-              className="mt-2 w-full bg-amber-500 text-slate-950 font-black py-3 rounded-xl text-sm"
-            >
-              SPEL HERVATTEN
-            </button>
-          </div>
-        ) : (
-          <div className="pb-6 z-10 text-center text-xs text-slate-500">
-            Druk op de knop om het rad te laten spinnen!
-          </div>
-        )}
       </div>
     );
   }
