@@ -1,8 +1,8 @@
 export interface CategoryChallenge {
   id: string;
   title: string;
-  categoryName: string; // e.g. "Sigarettenmerken"
-  description: string;  // e.g. "Hoeveel verschillende sigaretten- of tabaksmerken kun jij noemen in 15 seconden?"
+  categoryName: string;
+  description: string;
   defaultTimeSeconds: number;
 }
 
@@ -17,38 +17,38 @@ export const VICTORY_DARES: Dare[] = [
   {
     id: "vic-1",
     type: "VICTORY",
-    title: "👑 Koning van het Kampvuur",
-    description: "De winnaar mag bepalen WIE van de medespelers 10 seconden lang een gekke overwinningsdans rond het vuur moet doen!"
+    title: "🪑 Stoel Opeisen",
+    description: "Je mag direct de stoel of de beste plek bij het kampvuur opeisen van een medespeler naar keuze!"
   },
   {
     id: "vic-2",
-    title: "🎯 De Barmhartige Samaritaan",
-    description: "Wijs een medespeler aan die jouw drankje voor de rest van de avond moet inschenken/halen!"
+    title: "❓ Eerlijke Vraag Stellen",
+    description: "Je mag één willekeurige speler EEN directe vraag stellen. Diegene moet eerlijk antwoorden of 3 slokken drinken!"
   },
   {
     id: "vic-3",
-    title: "🎭 Accent Verplicht",
-    description: "Wijs iemand aan die de komende 3 rondes met een zwaar Frans, Vlaams of Duits accent MOET praten."
+    title: "🍹 Hofleverancier",
+    description: "Wijs een medespeler aan die jouw drankje de komende 2 rondes moet inschenken of halen."
   },
   {
     id: "vic-4",
-    title: "🍾 Dubbele Genade",
-    description: "De verliezer (die dacht dat jij het niet kon) moet BINNEN 10 seconden zijn glas adje/bijdrinken!"
+    title: "📜 Mini-Regel Bepalen",
+    description: "Verzin 1 mini-regel voor de komende ronde (bijv. 'Niemand mag namen noemen' of 'Alleen met links drinken'). Overtreding = 2 slokken!"
   },
   {
     id: "vic-5",
-    title: "📸 De Overwinnaars-Selfie",
-    description: "Iedereen behalve jij moet een gekke smoel trekken op een groepsfoto die jij nu maakt!"
+    title: "🎯 Slokken Verdelen",
+    description: "Je mag 4 bonus-slokken willekeurig verdelen over je medespelers!"
   },
   {
     id: "vic-6",
     title: "🤫 De Stilte Straf",
-    description: "Wijs een medespeler aan die 2 rondes lang helemaal NIET meer mag praten. Zegt hij toch wat? 2 slokken per woord!"
+    description: "Wijs een medespeler aan die 1 ronde lang helemaal NIET meer mag praten. Zegt hij toch wat? 2 slokken per woord!"
   },
   {
     id: "vic-7",
-    title: "👑 De Koninklijke Stoel",
-    description: "Iemand moet zijn/haar stoel voor jou afstaan of je 1 minuut lang als een koning bedienen!"
+    title: "📱 Melding Voorlezen",
+    description: "Wijs iemand aan die het laaste ontvangen berichtje op zijn/haar telefoon hardop moet voorlezen (of 3 slokken drinkt)!"
   }
 ];
 
@@ -56,44 +56,38 @@ export const PENALTY_DARES: Dare[] = [
   {
     id: "pen-1",
     type: "PENALTY",
-    title: "🤡 Groepsapp Schande",
-    description: "Stuur een maffe selfie met gekke smoel zonder enige context naar je vrienden- of familie-groepsapp!"
+    title: "🪑 Stoel Afstaan",
+    description: "Je moet je stoel of zitplek voor 2 rondes afstaan aan de uitdager!"
   },
   {
     id: "pen-2",
     type: "PENALTY",
-    title: "🧊 Koud Water / IJsblokje",
-    description: "Laat de uitdager een koud ijsblokje of een scheutje ijskoud water achter in je nek of shirt glijden!"
+    title: "❓ Biecht Vraag Antwoorden",
+    description: "De uitdager mag jou 1 directe vraag stellen. Je moet eerlijk antwoorden of 3 extra slokken nemen!"
   },
   {
     id: "pen-3",
     type: "PENALTY",
-    title: "🎤 Kampvuur Serenade",
-    description: "Zing de eerste 4 regels van een bekend kampvuurnummer of kinderliedje keihard voor de groep!"
+    title: "🍹 Drankje Inschenken",
+    description: "Schenk het glas van de uitdager (of een medespeler) weer helemaal vol tot de rand!"
   },
   {
     id: "pen-4",
     type: "PENALTY",
-    title: "🌶️ De Scherpe Happer",
-    description: "Eet een lepel mosterd, mayo, sambal of citroensap zonder te trekken met je gezicht!"
+    title: "📱 Melding Voorlezen",
+    description: "Lees het laatst ontvangen appje op jouw telefoon hardop voor aan de groep (of neem 3 slokken boete)!"
   },
   {
     id: "pen-5",
     type: "PENALTY",
-    title: "🐸 Kikkersprongen",
-    description: "Doe 5 kikkersprongen rond het kampvuur terwijl je hardop 'KWAAK' roept bij elke sprong!"
+    title: "🍻 Dubbele Slokken Boete",
+    description: "Neem direct 2 extra slokken bovenop je gefaalde bod als boete voor je bluf!"
   },
   {
     id: "pen-6",
     type: "PENALTY",
-    title: "💇‍♂️ Maffiseer je Kapsel",
-    description: "De uitdager mag je haar voor de rest van de avond helemaal maffiseren met water/gel!"
-  },
-  {
-    id: "pen-7",
-    type: "PENALTY",
-    title: "📱 Engelse Telefoon",
-    description: "Zet de taal van je mobiel tot het einde van het spel op het Engels (of Duits)!"
+    title: "🎭 Verplicht Accent",
+    description: "Praat de komende 2 rondes verplicht met een Belgisch of Amsterdams accent."
   }
 ];
 
@@ -242,7 +236,7 @@ export const CATEGORIES: CategoryChallenge[] = [
     id: "cat-21",
     title: "🐕 Hondenrassen & Dieren",
     categoryName: "hondenrassen / dieren",
-    description: "Hoeveel hondenrassen of wilde dieren kun jij opnoemen in 15 seconden?",
+    description: "Hoeveel hondenrassen op wilde dieren kun jij opnoemen in 15 seconden?",
     defaultTimeSeconds: 15
   },
   {
